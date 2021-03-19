@@ -44,7 +44,7 @@ include macros.asm
     msgOpen      db "%% ",'$'
     msgClose     db "                                                                             %%",10,'$'
     contador  db 0
-    resultado db 0
+    resultado dw 0
     operador  db 0; almacenara el char -> +,-,*,/
     operando1      dw 0,'?','$' ; Aqui se almacenara el resultado final de las operaciones aritmeticas
     operando2      dw 0 
@@ -109,12 +109,10 @@ modo_calculadora proc
     readCadenaTeclado buffNum ; leer entrada de digito 
         CALL stoi   ; castear string to integer, el resultado se almacena en "resultado"
         xor AX,AX  
-        mov ah, resultado ; Insertar resultado (8-bits) a una variable de 16 bits (AX)
+        mov AX, resultado 
         mov operando1, AX
-        cmp operando1, -10
-        jne seguir 
-            print locura
-    seguir:print operando1
+    seguir:
+    ;print operando1
     print msgOpen
     print msgOperador
         readKeyboard; operador estara en AL
@@ -125,15 +123,13 @@ modo_calculadora proc
     readCadenaTeclado buffNum ; leer entrada de digito 
         CALL stoi
         xor AX,AX
-        mov al, resultado
+        mov AX, resultado
         mov operando2, AX
         ejecutarOperacionAritmetica operando1, operando2, operador
-        
-print salto
-    cmp operando1, -5
-    jne mierda
-        print funciono
-    mierda:
+        cmp operando1, -5
+        jne seguir 
+            print locura
+
 ret
 modo_calculadora endp
     
@@ -198,24 +194,27 @@ stoi proc ; Convierte "-10"(string) a -10 (integer)
     INC BX ; La cadena esta siempre en size+1 (cx + 1)
     mov resultado, 0 ; limpiamos donde se almacenara el resultado final 
     mov contador,0
+    mov DX, 0
     forMD:
+        
         ; if ( contador) == 0  // Estariamos en la ultima posicion del string 
         CMP contador,0
         jne L1MD
             ;printChar buffNum[BX]
-            mov ah, buffNum[BX]
-            SUB ah,48 ; ah = ah - 48 // convierte el char a digito 
-            ADD resultado, ah ; Siempre sera 0 = 0 + ah
+            mov dl, buffNum[BX]
+            SUB dl,48 ; ah = ah - 48 // convierte el char a digito 
+            ADD resultado, DX ; Siempre sera 0 = 0 + ah
         L1MD:
         ;else if (contador == 1) // Estariamos en el ultimo digito posible (19) -> estariamos en el 1
         CMP contador,1
         jne L2MD
             ;printChar buffNum[BX]
-            mov ah,buffNum[BX]
-            SUB ah,48 ; ah = ah - 48 // convierte el char a digito 
+            mov dl,buffNum[BX]
+            SUB dl,48 ; ah = ah - 48 // convierte el char a digito 
             mov al, 10
-            MUL ah ; MUL multiplica lo del registro al con el operador siguiente de la instruccion MUL -> ej (10 * ah)
-            ADD resultado, al
+            MUL dl ; MUL multiplica lo del registro al con el operador siguiente de la instruccion MUL -> ej (10 * ah)
+            mov dl, al ; El resultado de la multiplicacion se coloca en dl
+            ADD resultado, DX
         L2MD:
         ;else if (contador == 2) // Estariamos en el signo del digito (- o +) 
         CMP contador,2
@@ -228,6 +227,7 @@ stoi proc ; Convierte "-10"(string) a -10 (integer)
         DEC BX ; Moverse al caracter anterior
         INC contador
     loop forMD ; Utiliza por defecto cx para iterar
+
 ret
 stoi endp
     

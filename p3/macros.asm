@@ -56,15 +56,6 @@ ejecutarOperacionAritmetica macro operando1, operando2, operador ; operando1 y o
         xor AX,AX 
         mov AX, operando2
         ADD operando1, AX ; resultado se almacenara en operando1
-        print salto
-        printChar -5
-        print salto
-        ;print operando1
-        mov ax, operando1
-            cmp ax, -5;11111011b
-            jne mierdas
-            print funciono
-        mierdas:
     resta:
 endm
 
