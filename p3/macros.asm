@@ -50,7 +50,7 @@ readCadenaTeclado macro buffer; lee cadena del teclado y lo inserta en la direcc
 endm
 
 ejecutarOperacionAritmetica macro operando1, operando2, operador ; operando1 y operando2, tienen la misma direccion de memoria de las variables globales
-    LOCAL fin
+    LOCAL fin, resta, multiplicacion, division
     CMP operador, '+' ; Sumar los operandos
     jne resta
         xor AX,AX 
@@ -70,13 +70,61 @@ ejecutarOperacionAritmetica macro operando1, operando2, operador ; operando1 y o
         IMUL Bx ; Ax * Bx -> resultado en Ax
         mov operando1, ax
     division:; La division con signo, requiere que AX sea signo extendido a DX
-    CMP operador, '/'
-    jne fin
-        mov Ax, operando1; dividendo
-        cwd ; sign-extended AX en DX
-        mov Bx, operando2; divisor
-        IDIV Bx; Cociente en AX, residuo en DX
-        mov operando1, ax
+        CMP operador, '/'
+        jne fin
+            mov Ax, operando1; dividendo
+            cwd ; sign-extended AX en DX
+            mov Bx, operando2; divisor
+            IDIV Bx; Cociente en AX, residuo en DX
+            mov operando1, ax
     fin:
 endm
 
+itos macro val ;integer to string
+    LOCAL L6,imprimir, L7,salir
+
+    mov ax, val
+    mov dx,0 ; Aqui ira el residuo 
+    mov cx,0 ; Para saber cuanto sacar de la pila          
+    ; if ax == 0, no operar y solo mostrar el valor '0'
+    cmp ax,0
+    je L7
+     
+    L6:
+    ;if cociente = 0, ya no puede didivir, por lo que debe terminar
+      cmp ax, 0
+      je imprimir
+    
+      mov bx, 10
+      div bx ; ax / bx    
+      
+      ;Almacenar el residuo
+      push dx
+      ;incrementar el contador
+      inc cx 
+      ; limpiar dx, ya que DIV uitliza dx en sus calculos
+      xor dx,dx
+      jmp L6
+    imprimir: 
+      ;Extraer de la pila
+      cmp cx,0
+      je salir  
+    
+      pop dx
+      ; convertir ascii del digito    
+      add dx,48
+      ; interrupcion para imprimir caracter
+      mov ah, 02h 
+      int 21h ; El valor lo extrae de dl   
+                                        
+      dec cx
+      jmp imprimir
+      
+    L7:
+      ; print 0
+      mov dx, ax
+      add dx,48 
+      mov ah, 02h
+      int 21h ; El valor lo extrae de dl
+    salir:
+endm

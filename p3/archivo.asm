@@ -43,12 +43,14 @@ include macros.asm
     msgFinOper   db "%% Ingrese un operador o ';' para finalizar                                  %%",10,'$'
     msgOpen      db "%% ",'$'
     msgClose     db "                                                                             %%",10,'$'
-    contador  db 0
-    resultado dw 0
-    operador  db 0; almacenara el char -> +,-,*,/
-    operando1      dw 0,'?','$' ; Aqui se almacenara el resultado final de las operaciones aritmeticas
-    operando2      dw 0 
-    locura db 10,"QUE?",'$'
+    contador     db 0
+    resultado    dw 0
+    operador     db 0; almacenara el char -> +,-,*,/
+    operando1    dw 0; Aqui se almacenara el resultado final de las operaciones aritmeticas
+    operando2    dw 0 
+    locura       db 10,"QUE?",'$'
+    alternar     db 0 ; funcionara como variable booleana
+
 .code
 
 main proc
@@ -110,22 +112,51 @@ modo_calculadora proc
         xor AX,AX  
         mov AX, resultado 
         mov operando1, AX
-    ;seguir:
-    ;print operando1
-    print msgOpen
     print msgOperador
+    print msgOpen
         readKeyboard; operador estara en AL
         mov operador, Al 
     print salto
     print msgNum
     print msgOpen
     readCadenaTeclado buffNum ; leer entrada de digito 
-        CALL stoi
+        CALL stoi ; Conversion ira en 'resultado'
         xor AX,AX
         mov AX, resultado
         mov operando2, AX
-        ejecutarOperacionAritmetica operando1, operando2, operador
-        
+        ejecutarOperacionAritmetica operando1, operando2, operador ; calculo -> operando1
+    mov alternar,0 ; Reiniciamos la variable global
+    L3: ;do
+        ; Pedir otro operador o fin del calculo
+        cmp alternar, 0 ; if(alternar == false)
+        jne L4
+            mov alternar,1 ; alternar = true
+            print salto
+            print msgFinOper
+            print msgOpen
+            readKeyboard ; Resultado en AL
+            print salto
+            mov operador, al 
+            jmp L5
+
+    L4: ; alternar ==1
+        ; Pedir un Numero
+        mov alternar, 0 ; alternar = false
+        print msgNum
+        print msgOpen
+        readCadenaTeclado buffNum ; leer entrada de digito 
+        CALL stoi ; Conversion almacenado en 'resultado'
+        xor ax, ax 
+        mov ax, resultado
+        mov operando2, ax
+        ejecutarOperacionAritmetica operando1, operando2, operador ; calculo -> operando1
+    L5:
+        cmp operador, ';';while operador != ;
+        je L2
+        jne L3
+    L2: ; Fin de uso de calculadora
+        ;convertir integer a string
+        itos operando1
  salite:
 ret
 modo_calculadora endp
