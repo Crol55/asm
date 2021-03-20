@@ -50,12 +50,33 @@ readCadenaTeclado macro buffer; lee cadena del teclado y lo inserta en la direcc
 endm
 
 ejecutarOperacionAritmetica macro operando1, operando2, operador ; operando1 y operando2, tienen la misma direccion de memoria de las variables globales
-
+    LOCAL fin
     CMP operador, '+' ; Sumar los operandos
     jne resta
         xor AX,AX 
         mov AX, operando2
         ADD operando1, AX ; resultado se almacenara en operando1
     resta:
+    CMP operador,'-'
+    jne multiplicacion
+        xor AX,AX
+        mov AX, operando2
+        SUB operando1, AX
+    multiplicacion:
+    CMP operador, '*'
+    jne division
+        mov Bx, operando2
+        mov Ax, operando1
+        IMUL Bx ; Ax * Bx -> resultado en Ax
+        mov operando1, ax
+    division:; La division con signo, requiere que AX sea signo extendido a DX
+    CMP operador, '/'
+    jne fin
+        mov Ax, operando1; dividendo
+        cwd ; sign-extended AX en DX
+        mov Bx, operando2; divisor
+        IDIV Bx; Cociente en AX, residuo en DX
+        mov operando1, ax
+    fin:
 endm
 

@@ -59,8 +59,7 @@ main proc
      print mensaje
      displayMenu:
         print menu
-
-        
+    
    
  ;*********************** Leer teclado ***************
     readKeyboard ; Lee teclado, el resultado lo almacena en Al
@@ -111,7 +110,7 @@ modo_calculadora proc
         xor AX,AX  
         mov AX, resultado 
         mov operando1, AX
-    seguir:
+    ;seguir:
     ;print operando1
     print msgOpen
     print msgOperador
@@ -126,10 +125,8 @@ modo_calculadora proc
         mov AX, resultado
         mov operando2, AX
         ejecutarOperacionAritmetica operando1, operando2, operador
-        cmp operando1, -5
-        jne seguir 
-            print locura
-
+        
+ salite:
 ret
 modo_calculadora endp
     
@@ -196,7 +193,6 @@ stoi proc ; Convierte "-10"(string) a -10 (integer)
     mov contador,0
     mov DX, 0
     forMD:
-        
         ; if ( contador) == 0  // Estariamos en la ultima posicion del string 
         CMP contador,0
         jne L1MD
@@ -205,9 +201,13 @@ stoi proc ; Convierte "-10"(string) a -10 (integer)
             SUB dl,48 ; ah = ah - 48 // convierte el char a digito 
             ADD resultado, DX ; Siempre sera 0 = 0 + ah
         L1MD:
-        ;else if (contador == 1) // Estariamos en el ultimo digito posible (19) -> estariamos en el 1
+        ;else if (contador == 1 && 'char' == (0-9)) // Estariamos en el ultimo digito posible (19) -> estariamos en el 1
         CMP contador,1
         jne L2MD
+        CMP buffNum[BX], '0'
+        JB  L2MD
+        CMP buffNum[BX], '9'
+        JA L2MD
             ;printChar buffNum[BX]
             mov dl,buffNum[BX]
             SUB dl,48 ; ah = ah - 48 // convierte el char a digito 
@@ -215,14 +215,14 @@ stoi proc ; Convierte "-10"(string) a -10 (integer)
             MUL dl ; MUL multiplica lo del registro al con el operador siguiente de la instruccion MUL -> ej (10 * ah)
             mov dl, al ; El resultado de la multiplicacion se coloca en dl
             ADD resultado, DX
-        L2MD:
-        ;else if (contador == 2) // Estariamos en el signo del digito (- o +) 
-        CMP contador,2
-        jne L3MD
-            ;printChar buffNum[BX]
-            CMP buffNum[BX],'-' ; if(es numero negativo)
-            jne L3MD
-                NEG resultado ; Convertimos el resultado a negativo
+        L2MD: 
+        ;if ('char' == '-') // Estariamos en el signo del digito
+        CMP buffNum[BX],'-' ; if(es numero negativo)
+        jne L3MD 
+            NEG resultado ; Convertimos el resultado a negativo
+            ;cmp resultado,-5
+            ;jne L3MD
+                ;print locura
         L3MD:
         DEC BX ; Moverse al caracter anterior
         INC contador
