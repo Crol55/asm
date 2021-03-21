@@ -128,3 +128,25 @@ itos macro val ;integer to string
       int 21h ; El valor lo extrae de dl
     salir:
 endm
+
+
+getFactorial macro val
+    LOCAL L9, afuera
+    mov cx,val
+    mov ax, 1
+    L9: 
+      ;while (cx != 0)
+      cmp cx,0
+      je afuera
+      
+      mov dx, 0
+      mul cx ; ax = ax * cx
+      ; decrementar el valor
+      dec cx
+
+      jmp L9
+    
+    afuera:
+      mov resp, ax
+
+endm

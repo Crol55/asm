@@ -51,6 +51,17 @@ include macros.asm
     locura       db 10,"QUE?",'$'
     alternar     db 0 ; funcionara como variable booleana
 
+    ; Usadas en MODO FACTORIAL
+    msgF  db 10,"%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%",10
+    msgF2 db "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  MODO Factorial  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%",10
+    msgF3 db "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%",10,'$'
+    resp         dw 0
+    msgFact      db "!=",'$'
+    contadorF    dw 0
+    numFact      dw 0 ; donde se almacenara el numero factorial que se desea calcular
+    buffNumF     db 3,0,0,0,0
+    msgoperaciones db "%% Operaciones: ",'$'
+    msgresultado   db "%% Resultado: ",'$'
 .code
 
 main proc
@@ -86,19 +97,27 @@ main proc
  ;************** MODO CALCULADORA *************
     modoCalculadora:
         CALL modo_calculadora
+        jmp displayMenu
 
  ;************** MODO FACTORIAL *************
     modoFactorial:
+        print msgF
+        CALL factorial
+        print salto
+        print msgF3
+        jmp displayMenu
 
  ;************** CREAR REPORTE *************
     crearReporte:
-
+      
 
  ;********************** SALIR ***************
     FIN:
     mov Ah,4Ch
     int 21h
 main endp 
+
+
 
 
 
@@ -155,6 +174,15 @@ modo_calculadora proc
         je L2
         jne L3
     L2: ; Fin de uso de calculadora
+        ; Verificar si el numero es negativo
+        mov ax, operando1
+        shl ax, 1 
+        JNC castear ; Es positivo
+        ; Convertir el numero a positivo para que 'itos' lo convierta al valor que deseamos
+        NEG operando1
+        ; imprimir el caracter '-'
+        printChar '-' 
+    castear:
         ;convertir integer a string
         itos operando1
  salite:
@@ -268,5 +296,50 @@ ret
 operar_etiquetas endp
 
 
+factorial proc
+    print msgNum
+    print msgOpen
+    readCadenaTeclado buffNumF
+    xor ax,ax
+    mov al, buffNumF + 3 ; contiene el numero tipo 'char'
+    sub al, 48 ; Casteamos el 'char' a 'integer'
+
+    mov numFact, ax  ; factorial que se desea obtener
+    mov contadorF,0  ; contador
+    print msgoperaciones
+    whileMF:
+        mov ax, numFact
+        cmp contadorF,ax
+        jg salirMF
+            mov ax, contadorF 
+            add ax, 48    ; Convertirlo a integer
+            printChar al  ; ah y dl se modifican en este macro
+            print msgFact
+            cmp contadorF,1
+            jle L13 ; salta si es 0 o 1
+                ;print locura
+                itos resp
+                printChar '*'
+                mov ax, contadorF
+                add ax, 48
+                printChar al  ; ah y dl se modifican en este macro
+                printChar '='
+            L13:
+                getFactorial contadorF ; almacenado en 'resp'
+                itos resp
+                printChar ';'
+
+            inc contadorF
+            jmp whileMF
+    salirMF:
+        print salto
+        print msgresultado
+        itos resp
+ret
+factorial endp
+
+
+
 end main
+
 
