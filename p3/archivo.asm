@@ -50,7 +50,7 @@ include macros.asm
     operando2    dw 0 
     locura       db 10,"QUE?",'$'
     alternar     db 0 ; funcionara como variable booleana
-
+    valString    db 7 dup('$') ; Usado cuando se castee integer a string
     ; Usadas en MODO FACTORIAL
     msgF  db 10,"%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%",10
     msgF2 db "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  MODO Factorial  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%",10
@@ -62,6 +62,20 @@ include macros.asm
     buffNumF     db 3,0,0,0,0
     msgoperaciones db "%% Operaciones: ",'$'
     msgresultado   db "%% Resultado: ",'$'
+    ; Usadas en REPORTE
+    strNombreReporte db "rep.htm",0 ; Debe terminar en 0(sino no creara el fichero)
+    strErrorF        db "Error al crear el archivo de reporte.",'$'
+    handleReporte dw 0
+    strRep db "<h1>Practica 3 Arqui 1 Seccion A</h1> <b>Estudiante:</b> Carlos Rene Orantes Lara <br><b>Carnet:</b> 201314172 <br><b>Fecha: </b>"
+    strHora db "<br><b>Hora: </b>"
+    intFecha   dw 0 ; para almacenar partes de la fecha
+    intanio    dw 0 ; para almacenar el año
+    arrayFecha db 12 DUP ('$')
+    arrayHora  db 5 DUP (0)
+    hora       dw 0
+    minutos    dw 0
+
+
 .code
 
 main proc
@@ -109,7 +123,8 @@ main proc
 
  ;************** CREAR REPORTE *************
     crearReporte:
-      
+        print salto
+        CALL reporte
 
  ;********************** SALIR ***************
     FIN:
@@ -223,6 +238,7 @@ cargar_archivo proc
         abrirFichero nombreArchivo, handlerCA
         leerFichero handlerCA,buffer,SIZEOF buffer
         cerrarFichero handlerCA
+        jc errorCF
     salirAF:
         jmp salirCA
     errorCA: 
@@ -335,10 +351,85 @@ factorial proc
         print salto
         print msgresultado
         itos resp
-ret
+ret ; utiliza stack para retornar
 factorial endp
 
 
+
+reporte proc 
+    crearFichero strNombreReporte ; -> AX = handle
+    jc errorR
+        mov handleReporte, ax
+        ;Imprimir la cabecera
+        writeFichero handleReporte, strRep, SIZEOF strRep
+        ;Obtener fecha del bios
+        mov ah, 2AH; retorna cx=year, dh=month, dl=dia
+        int 21h
+        mov di, 0 ; para insertar la fecha en el array correspondiente
+        ; castear dia
+        push dx ; para no perder dia
+        mov intanio, cx ; para no perder el año
+        mov ax, 0
+        mov al, dl 
+        mov intFecha,ax 
+        itos intFecha ; resultado -> valString
+        MoverSB arrayFecha,0, valString,0
+        mov arrayFecha[2], '/'
+        limpiarVariable valString, SIZEOF valString
+
+        ; Castear mes
+        pop dx ; para extraer dh = mes
+        mov ax, 0
+        mov al, dh 
+        mov intFecha, ax 
+        itos intFecha ; resultado -> valString
+        MoverSB arrayFecha,3, valString,0
+        mov arrayFecha[4], '/'
+        limpiarVariable valString, SIZEOF valString
+
+        ; Castear año
+        itos intanio
+        MoverSB arrayFecha,5, valString,0
+        limpiarVariable valString, SIZEOF valString
+        ; Escribir fecha en el fichero
+        writeFichero handleReporte, arrayFecha, 9
+
+        ; escribir hora en el fichero
+        writeFichero handleReporte, strHora, SIZEOF strHora
+        mov ah, 2ch ; retorna ch=hora, cl=minutos 
+        int 21h 
+        ; almacenar hora
+        mov ax,0 
+        mov al,ch
+        mov hora, ax
+        ; almacenar minutos
+        mov ax,0
+        mov al, cl 
+        mov minutos, ax 
+
+        ; HORA
+        itos hora ; convertir a string
+        ;writeFichero handleReporte, valString, 2
+        MoverSB arrayHora,0,valString,0
+        limpiarVariable valString, SIZEOF valString
+        mov arrayHora[2], ':'
+        
+        ;Minutos
+        itos minutos
+        MoverSB arrayHora, 3, valString, 0
+        limpiarVariable valString, SIZEOF valString
+
+        ; Imprimir la hora (concatenada)
+        writeFichero handleReporte, arrayHora, SIZEOF arrayHora
+
+        cerrarFichero handleReporte
+        jmp L11
+    errorR:
+        print strErrorF
+    L11:
+
+ret ; utiliza stack para retornar
+reporte endp
 
 end main
 
