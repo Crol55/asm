@@ -75,13 +75,30 @@ include macros.asm
     hora       dw 0
     minutos    dw 0
 
+    logTemporal    db 250 dup(0) ; almacenar todo lo que hace el usuario en la calculadora
+    contaLog       dw 0 
+    arrayTemp      db 2550 dup(0) ; almacenar las operaciones que realice el usuario cuandi diga (Si)
+    contaTemp      dw 0
+    arraySave      db 2700 dup(0),'$' ; Contendra toda la estrcutura del html
+    contaSave      dw 0  
+    maxOperaciones db 0 ; Solo permite almacenar 10 operaciones (maxOperaciones == 10)
+    ; strings HTML
+    tableO db "<table style=",34,"width:100%",34,"> <tr><th>Id Operacion</th><th>Operacion</th><th>Resultado</th></tr>"
+    tr     db "<tr>"
+    tableC db "</table>"
+    trC    db "</tr>"
+    td     db "<td>"
+    tdC    db "</td>"
+    op     db "Op-"
+    strPregunta db "Desea guardar la operacion (S/N)",'$' 
 
+    strError db "Error, El maximo de operaciones que se pueden almacenar son 10",'$'
 .code
 
 main proc
     mov AX,@data 
     mov ds,AX 
-
+    
  ;************************ IMPRIMIR CABECERA *****************
      print mensaje
      displayMenu:
@@ -111,7 +128,37 @@ main proc
  ;************** MODO CALCULADORA *************
     modoCalculadora:
         CALL modo_calculadora
-        jmp displayMenu
+        print salto
+        print strPregunta
+        print salto
+        readKeyboard ; al
+        cmp al, 'n'
+        je L16
+        cmp al,'s'
+        jne L16
+            ; Si desea almacenar la informacion
+            cmp maxOperaciones, 10
+            je L17
+            MoverSB arrayTemp,contaTemp,logTemporal,0
+            add contaTemp,250
+
+            inc maxOperaciones
+            ;print salto
+            ;print logTemporal
+            ;print locura
+            ;print salto
+            ;print arrayTemp
+    L16:
+        ; reiniciar el log temporal, independientemente si almacena o no 
+        limpiarVariable valString, SIZEOF valString
+        limpiarvarConCeros logTemporal, SIZEOF logTemporal
+        mov contaLog, 0 
+        jmp L18
+    L17: 
+        print salto
+        print strError
+    L18:
+        JMP displayMenu  
 
  ;************** MODO FACTORIAL *************
     modoFactorial:
@@ -119,12 +166,14 @@ main proc
         CALL factorial
         print salto
         print msgF3
+        limpiarVariable valString, SIZEOF valString
         jmp displayMenu
 
  ;************** CREAR REPORTE *************
     crearReporte:
         print salto
         CALL reporte
+        jmp displayMenu
 
  ;********************** SALIR ***************
     FIN:
@@ -137,28 +186,74 @@ main endp
 
 
 modo_calculadora proc
+
+    ;Almacenar en log
+    MoverSB logTemporal,contaLog, tr, 0 
+    add contaLog, SIZEOF tr
+
+    MoverSB logTemporal,contaLog, td, 0
+    add contaLog,SIZEOF td
+    MoverSB logTemporal,contaLog, op, 0
+    add contaLog, SIZEOF op
+    ; setear id de coperaciones
+    mov si, offset logTemporal
+    add si, contaLog
+    mov al, maxOperaciones
+    add al, 48
+    mov [si], al
+    inc contaLog
+
+    MoverSB logTemporal,contaLog, tdC, 0
+    add contaLog, SIZEOF tdC
+    
+    MoverSB logTemporal,contaLog, td, 0 
+    add contaLog, SIZEOF td
+
     print salto
     print msgModoCalc
     print msgNum
     print msgOpen
     readCadenaTeclado buffNum ; leer entrada de digito 
+        ;Almacenar en log
         CALL stoi   ; castear string to integer, el resultado se almacena en "resultado"
+        ;concatenar el valor ingresado a nuestro log
+        setFinCadena buffNum
+        MoverSB logTemporal,contaLog, buffNum, 2 
+        mov ax, 0
+        mov al, buffNum[1]
+        add contaLog, ax
+        
         xor AX,AX  
         mov AX, resultado 
         mov operando1, AX
+
     print msgOperador
     print msgOpen
         readKeyboard; operador estara en AL
         mov operador, Al 
+        ; Almacenar en log
+        mov si, offset logTemporal
+        add si, contaLog
+        mov [si], al
+        inc contaLog
+
     print salto
     print msgNum
     print msgOpen
     readCadenaTeclado buffNum ; leer entrada de digito 
         CALL stoi ; Conversion ira en 'resultado'
+        ;concatenar el valor ingresado a nuestro log
+        setFinCadena buffNum
+        MoverSB logTemporal,contaLog, buffNum, 2 
+        mov ax, 0
+        mov al, buffNum[1]
+        add contaLog, ax
+
         xor AX,AX
         mov AX, resultado
         mov operando2, AX
         ejecutarOperacionAritmetica operando1, operando2, operador ; calculo -> operando1
+
     mov alternar,0 ; Reiniciamos la variable global
     L3: ;do
         ; Pedir otro operador o fin del calculo
@@ -171,6 +266,11 @@ modo_calculadora proc
             readKeyboard ; Resultado en AL
             print salto
             mov operador, al 
+
+            mov si, offset logTemporal
+            add si, contaLog
+            mov [si], al
+            inc contaLog
             jmp L5
 
     L4: ; alternar ==1
@@ -180,6 +280,13 @@ modo_calculadora proc
         print msgOpen
         readCadenaTeclado buffNum ; leer entrada de digito 
         CALL stoi ; Conversion almacenado en 'resultado'
+
+        setFinCadena buffNum
+        MoverSB logTemporal,contaLog, buffNum, 2 
+        mov ax, 0
+        mov al, buffNum[1]
+        add contaLog, ax
+
         xor ax, ax 
         mov ax, resultado
         mov operando2, ax
@@ -189,6 +296,10 @@ modo_calculadora proc
         je L2
         jne L3
     L2: ; Fin de uso de calculadora
+
+        MoverSB logTemporal,contaLog, tdC, 0 
+        add contaLog, SIZEOF tdC
+        
         ; Verificar si el numero es negativo
         mov ax, operando1
         shl ax, 1 
@@ -200,6 +311,25 @@ modo_calculadora proc
     castear:
         ;convertir integer a string
         itos operando1
+        ; almacenar el resultado para el reporte
+        MoverSB logTemporal,contaLog, td, 0 
+        add contaLog, SIZEOF td
+
+        MoverSB logTemporal,contaLog, valString, 0 
+        add contaLog, 7; default
+
+        MoverSB logTemporal,contaLog, tdC, 0 
+        add contaLog, SIZEOF tdC
+
+        MoverSB logTemporal,contaLog, trC, 0 
+        add contaLog, SIZEOF trC
+
+        mov si, offset logTemporal
+        add si, contaLog
+        mov al, '$'
+        mov [si], al
+        ;inc contaLog
+        ;print logTemporal
  salite:
 ret
 modo_calculadora endp
@@ -268,7 +398,7 @@ stoi proc ; Convierte "-10"(string) a -10 (integer)
     mov contador,0
     mov DX, 0
     forMD:
-        ; if ( contador) == 0  // Estariamos en la ultima posicion del string 
+        ; if ( contador) == 0  // Estariamos en la ultima posicion del string
         CMP contador,0
         jne L1MD
             ;printChar buffNum[BX]
@@ -422,6 +552,12 @@ reporte proc
         ; Imprimir la hora (concatenada)
         writeFichero handleReporte, arrayHora, SIZEOF arrayHora
 
+        ; Escribir las operaciones en el usuario haya guardado
+        MoverSB arraySave,0, tableO,0
+        MoverSB arraySave, 120, arrayTemp,0
+        MoverSB arraySave,2500, tableC,0
+        ;print arraySave
+        writeFichero handleReporte, arraySave, SIZEOF arraySave
         cerrarFichero handleReporte
         jmp L11
     errorR:

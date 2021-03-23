@@ -162,6 +162,18 @@ limpiarVariable macro variable, varSize ; coloca '$' en la variable indicada
 endm
 
 
+limpiarvarConCeros macro variable, varSize; coloca '0' en la variable
+    LOCAL iterar
+    mov cx, varSize
+    mov si, offset variable
+    mov dl, 0 ; caracter de limpieza
+    iterar:
+        mov [si], dl
+        inc si
+    loop iterar ; internamente -> DEC cx
+endm
+
+
 MoverSB macro destino,pos1, origen, pos2 
     LOCAL for, breakk
     mov ax, @data 
@@ -180,6 +192,27 @@ MoverSB macro destino,pos1, origen, pos2
         loop for 
 
         breakk:
+endm
+
+
+
+setFinCadena macro buffer
+    local for, continuar
+    mov cx, SIZEOF buffer
+    mov bx, cx ;
+    mov si, offset buffer
+    for:
+    ;print funciono
+    mov al, 13
+        cmp [si], al ; cret
+        jne continuar
+            mov al, '$'
+            mov [si], al
+            ;print locura
+        continuar:
+        inc si
+    loop for
+    
 endm
 
 
