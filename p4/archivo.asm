@@ -107,7 +107,12 @@ main proc
     mov der, 18
     CALL INI_VIDEO
     CALL QUICKSORT
+    ; Mostrar el arreglo final ordenado
+    limpiar_pantalla
     CALL GRAFICAR_NUMEROS
+            mov ah, 10h
+            int 16h 
+            limpiar_pantalla
     mov ah, 10h
     int 16h 
     
@@ -170,12 +175,14 @@ main endp
 
 QUICKSORT proc     
     
+    
     push si 
     push di
     push ax  
     push bx  ; aux
     
     CALL DS_DATOS
+
     mov si, izq ; izq =0, i +-
     mov di, der ; der =9  j +-
      
@@ -206,13 +213,18 @@ QUICKSORT proc
         ; if(i < j)
         cmp si, di
         JGE L20       
-        
+            ; Incercambiar los valores
             mov bx, arrNumeros[si]
             push bx 
             mov bx, arrNumeros[di]
             mov arrNumeros[si],bx
             pop bx 
             mov arrNumeros[di], bx 
+
+            CALL GRAFICAR_NUMEROS
+            Delay 3000 
+            limpiar_pantalla
+            
         
         L20:
         
@@ -227,6 +239,9 @@ QUICKSORT proc
     pop ax
     mov arrNumeros[di], ax  
     
+    CALL GRAFICAR_NUMEROS
+    Delay 3000 
+    limpiar_pantalla
     
     
     mov bx, di
@@ -263,6 +278,7 @@ QUICKSORT endp
 
 GRAFICAR_NUMEROS proc 
     pushF
+    CALL DS_DATOS
     ; %%%%%%%%%%%% Calcular el ancho que deben tener los rectangulos %%%%%%%%%%%%%%%%%
     mov ax, contaNumeros
     mov bx, 5   ; Espaciado entre cada rectangulo 
@@ -290,6 +306,7 @@ GRAFICAR_NUMEROS proc
     CALL DS_VIDEO 
 
     pintar_marco 20,190,15,305,15
+
     ;Crear todos los rectangulos y colocarle sus respectivos valores+
     forL2:
         CALL DS_DATOS ; Apuntar al segmento de datos
@@ -355,7 +372,7 @@ GRAFICAR_NUMEROS proc
 
         CALL DS_VIDEO ; Apuntar al segmento de videos
         pintar_rectangulo bx,ax,dx,colorcito 
-
+        CALL DS_DATOS
         mov bx, ax 
         add bx, 5 ; Agregamos el espaciado entre cada rectangulo
 
