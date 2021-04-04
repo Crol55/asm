@@ -264,11 +264,10 @@ pintar_pixel macro i,j,color ; i(fila) -> (0,199), j(col)-> (0-319)
     add ax, j 
     ; asignar el color en la direccion de memoria indicada
     mov di, ax 
-    CALL DS_DATOS
         mov ax, color
     CALL DS_VIDEO
-    mov [di],ax ; [] -> Asigna en el segmento actual el valor 
-      
+    mov [di],ax ; [] -> Asigna en el segmento de VIDEO actual el valor 
+    CALL DS_DATOS  
     pop dx
     pop di
     pop bx
@@ -395,3 +394,10 @@ limpiar_pantalla macro
     pop si
 
 endm
+
+pausar macro 
+    push ax 
+    mov ah, 10h
+    int 16h 
+    pop ax
+endm 
