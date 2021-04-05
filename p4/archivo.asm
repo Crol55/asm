@@ -22,6 +22,13 @@ include macros.asm
     errCierre db 10,"Error al realizar la lectura del fichero",'$'
     buffer db 1500 dup('$')
 
+    strBubble db "Bubble",'$'
+    strQuick  db "QUICK",'$' 
+    strShell  db "SHELL",'$'
+    strOrdenamiento  db "Ordenamiento:",'$'
+    strTiempo db "Tiempo:12:30",'$'
+    strVel    db "Vel:5",'$'
+
     handlerCA    dw 0
     cadena db "52",'$'
     cadena2 db "33", '$'
@@ -29,16 +36,16 @@ include macros.asm
     lexema db 30 dup('$')
     token db 0
 
-    arrNumeros     dw 25,25,41,25,15,19,78,80,9,3 ;dup(0)
-    contaNumeros   dw 10
-    maxVal         dw 80 ; Cual de los numeros de arrNumeros es el mayor
+    arrNumeros     dw 25 dup(0);25,25,41,25,15,19,78,80,9,3,10,65,76 ;dup(0)
+    contaNumeros   dw 0;13 ; Saber cuantos numeros hay en arrNumeros
+    maxVal         dw 0;80 ; Cual de los numeros de arrNumeros es el mayor
     finRect        dw 25 ; (fila) Altura maxima del rectangulo
 
     varPosCursor     db 0
     varExcede        db 0 ; Flag para saber si el ancho de los rectangulos es < 20 
     varDesproporcion dw 0 ; Cambia de valor si la altura del rectangulo estara desproporcionada
     strNumero        db 7 dup ('$') ;Para castear int a string
-    colorcito dw 10
+    colorcito        dw 10
 
     anchoRectangulo dw 0
     resultado dw 0 ; Utilizada en Stoi
@@ -47,6 +54,7 @@ include macros.asm
     izq dw 0
     der dw 0
 
+    modoOrdenamiento db 1; Ascendente = 1, Descendente = 2
     fun db "entro",10,'$'
 .code 
 
@@ -90,7 +98,14 @@ main proc
                 CALL stoi ; convertir string -> integer, Lo almacenara en la variable 'resultado'
                 mov ax, resultado
                 mov arrNumeros[di], ax
-                inc di
+                add di, 2
+                ; contar cuantos numeros hay
+                inc contaNumeros 
+                ;Determinar cual es el valor mas grande de los numeros ingresados
+                cmp ax, maxVal
+                jb salite 
+                    mov maxVal, ax  
+                ;inc di
             salite:
             ;limpiar variables
             limpiarVariable lexema, SIZEOF lexema
@@ -99,62 +114,39 @@ main proc
             jmp forCA 
         L1:
         jmp displayMenu
+        
     ordenar:
 
+        
+
+        mov dx, 0
+        mov ax, 2
+        mul contaNumeros ; resultado en AX ,
+        sub ax, 2
+
+        mov der, ax 
+
+        CALL INI_VIDEO
+        posicionar_cursor 1,0
+        print strOrdenamiento 
+        print strBubble 
+        posicionar_cursor 1,60
+        print strTiempo
+        posicionar_cursor 1,73
+        print strVel
+        
+        CALL QUICKSORT
+        ; Mostrar el arreglo final ordenado
+        limpiar_pantalla
+        CALL GRAFICAR_NUMEROS
+            pausar
+            ;limpiar_pantalla
+        CALL FIN_VIDEO
+        
     ;jmp pruebas
     crearReporte:
 
-    mov der, 18
-    CALL INI_VIDEO
-    CALL QUICKSORT
-    ; Mostrar el arreglo final ordenado
-    ;limpiar_pantalla
-    CALL GRAFICAR_NUMEROS
-        pausar
-        limpiar_pantalla
-    CALL FIN_VIDEO
-    ;CALL INI_VIDEO
-;
-    ;pintar_marco 20,190,15,305,15
-    ;mov ah, 10h
-    ;int 16h 
-    ;CALL FIN_VIDEO
-    ;pruebas:
-    ;CALL INI_VIDEO 
-;
-    ;pintar_marco 20,190,15,305,15
-;
-    ;pintar_rectangulo 20,43,25,10 
-    ;pintar_rectangulo 48,71,25,10
-    ;pintar_rectangulo 76,99,25,10
-    ;pintar_rectangulo 104,127,25,10
-    ;pintar_rectangulo 132,155,25,10
-    ;pintar_rectangulo 160,183,25,10
-    ;pintar_rectangulo 188,211,25,10
-    ;pintar_rectangulo 216,239,25,10
-    ;pintar_rectangulo 244,267,25,10
-    ;pintar_rectangulo 272,295,25,10
-;
-;
-    ;posicionar_cursor 20,2
-    ;CALL DS_DATOS
-    ;print cadena
-    ;mov ah, 10h
-    ;int 16h 
-    ;posicionar_cursor 20,6    
-    ;print cadena2
-    ;posicionar_cursor 20,9   
-    ;print cadena2
-    ;posicionar_cursor 20,13  
-    ;print cadena2
-    ;posicionar_cursor 20,17
-    ;print cadena2
-    ;mov ah, 10h
-    ;int 16h  
-;
-    ;CALL FIN_VIDEO
-    ;print cadena
-;
+
     FIN:
     mov Ah,4Ch
     int 21h
@@ -298,10 +290,21 @@ GRAFICAR_NUMEROS proc
         mov bx, 20 ; columna inicial donde iniciara el primer rectangulo
         mov cx, 0  ; iterar en los numeros ingresados
         mov ax, 0  ; limpiar ax
-        mov si, 0  ; Para ingresar a 'arrNumeros'
-
-    ;CALL DS_VIDEO 
-
+        ; if (modoOrdenamiento == 1) -> Ascendente 
+        ascendente: 
+            cmp modoOrdenamiento, 1
+            jne descendente 
+            mov si, 0  ; Para ingresar a 'arrNumeros'
+            jmp L14
+        descendente:
+        ; else (modoOrdenamiento es 2)
+            mov dx, 0 
+            mov ax, 2
+            mul contaNumeros
+            sub ax, 2 ; EJEMPLO!!!->(10*2)-2 ->Iniciaria desde el final, hacia 0
+            mov si, ax
+        L14: 
+        
     pintar_marco 20,190,15,305,15
     ;CALL DS_DATOS
     ;Crear todos los rectangulos y colocarle sus respectivos valores+
@@ -373,7 +376,13 @@ GRAFICAR_NUMEROS proc
         mov bx, ax 
         add bx, 5 ; Agregamos el espaciado entre cada rectangulo
 
-        add si,2
+        cmp modoOrdenamiento, 1
+        jne L15
+            add si,2
+            jmp L16 
+        L15:
+            sub si,2
+        L16:
         inc cx
         ;pausar
         jmp forL2
