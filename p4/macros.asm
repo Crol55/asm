@@ -26,6 +26,7 @@ endm
 
 
 readKeyboard macro ; El caracter leido es colocado en Al
+    
     mov Ah, 01h
     int 21h
 endm 
@@ -227,7 +228,7 @@ endm
 
 
 Delay macro constante
-    LOCAL D1,D2,Fin
+    LOCAL D1,D2,Fin, no_change
     push si
     push di
     push ax 
@@ -345,9 +346,71 @@ INSERT_ASC macro texto1, texto2 ; procedimiento que inserta las numeros y numero
 endm 
 
 
-get_indice macro valor ; utilizado en algoritmo quicksort
-
+borrar_rectangulo macro indice,ancho ; utilizado en algoritmo quicksort indice = (si | di)
+    LOCAL forcol, forfila
     
+    push di 
+    push si 
+    push ax 
+    push dx 
+    push cx 
+    push bx 
+
+    ; ej 18/2 = 9
+    mov dx, 0 
+    mov ax, indice 
+    mov cx, 2 ;  coiciente en AX
+    div cx
+
+    ; Calcular el inicio del rectangulo a borrar
+    mov bx, ax ; bx = indice / 2 
+    ; (ancho + 5)
+    mov dx, ancho 
+    add dx, 5 
+    
+    ; indice ( ancho + 5)
+    mov ax, dx 
+    mul bx  
+    
+    
+    ; 20 + indice ( ancho + 5)
+    add ax,20
+
+    ;limpiarVariable strNumero, sizeof strNumero 
+    ;itos ax, strNumero 
+    ;posicionar_cursor 0,0
+    ;print strNumero 
+    ;readKeyboard
+    push ancho 
+    add ancho, ax 
+    ; Borra el rectangulo
+    pintar_rectangulo ax, ancho, 25,0
+    pop ancho
+
+    ; Borra el numero asociado abajo del rectangulo
+    push ancho 
+    add ancho, ax
+    mov si,ax
+    forcol:
+        mov cx, 158 ; fila donde iniciara
+        forfila:
+            pintar_pixel cx, si, 0
+            inc cx 
+            cmp cx, 178 ;fila donde terminara 
+        jne forfila
+        inc si 
+        cmp si,ancho
+    jne forcol 
+
+    pop ancho
+    
+    pop bx
+    pop cx 
+    pop dx 
+    pop ax 
+    pop si 
+    pop di
+
 
 endm
 

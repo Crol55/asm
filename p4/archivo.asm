@@ -104,6 +104,8 @@ include macros.asm
     
     segundos db 0 
     contaSeg dw 0
+
+    indiceAux dw 0
 .code 
 
 main proc
@@ -219,7 +221,9 @@ main proc
             print strTiempo
             posicionar_cursor 1,73
             print strVel
-
+            
+            CALL GRAFICAR_NUMEROS
+                pausar
             CALL QUICKSORT
             ; Mostrar el arreglo final ordenado
             limpiar_pantalla
@@ -251,8 +255,7 @@ main endp
 
 
 QUICKSORT proc     
-    
-    
+
     push si 
     push di
     push ax  
@@ -263,8 +266,6 @@ QUICKSORT proc
     mov ah, 2ch
     int 21h  
     mov segundos, dh
-    
-    ;CALL DS_DATOS
 
     mov si, izq ; izq =0, i +-
     mov di, der ; der =9  j +-
@@ -296,39 +297,52 @@ QUICKSORT proc
         finwhile3: 
         ; if(i < j)
         cmp si, di
-        JGE L20       
+        JGE L20   
             ; Incercambiar los valores
             mov bx, arrNumeros[si]
             push bx 
             mov bx, arrNumeros[di]
+            borrar_rectangulo di,anchoRectangulo;***************************
             mov arrNumeros[si],bx
+            borrar_rectangulo si,anchoRectangulo;***************************
             pop bx 
             mov arrNumeros[di], bx 
 
+            Delay 1000 ; arreglar este delay por las variables...
             CALL GRAFICAR_NUMEROS
-            Delay 3000
-                       
-            limpiar_pantalla
+            Delay 1000
+            ;readKeyboard
+            ;pausar
         L20:
         
      
      jmp while1  
     finwhile1:
-    ;pausa
+    
     mov bx, izq  
     push ax
     mov ax, arrNumeros[di] 
     mov arrNumeros[bx],ax 
     pop ax
     mov arrNumeros[di], ax  
-    
-    cmp arrNumeros[bx], ax ; A[izq] == ax -> si son iguales no graficar
+
+    cmp bx, di ; A[izq] == ax -> si son iguales no graficar
     je noGraficar
+        ;CALL GRAFICAR_NUMEROS
+        borrar_rectangulo bx , anchoRectangulo;***************************
+        borrar_rectangulo di , anchoRectangulo;***************************
+        Delay 1000
         CALL GRAFICAR_NUMEROS
-        ;Delay 3000 
-        limpiar_pantalla
+        Delay 1000
+        ;;Delay 3000 
+        ;limpiar_pantalla
+
+        ;limpiarVariable strNumero, sizeof strNumero 
+        ;itos ax, strNumero 
+        ;posicionar_cursor 0,0
+        ;print strNumero 
+        ;pausar
     noGraficar:
-    
     
     mov bx, di
     sub bx, 2  
@@ -377,7 +391,7 @@ GRAFICAR_NUMEROS proc
     mul bx ; Resultado en DX,AX -> Si no supera los 16 bits entonces el resultado estara en AX
 
     mov bx, 280 ; Tamaño maximo disponible para poder alojar los rectangulos
-    sub bx, ax  ; Tamaño real para alojar los bloques para que cada uno tenga una espaciado de '5'
+    sub bx, ax  ; Tamaño real para alojar los bloques para que cada uno tenga una espaciado de '5' -> (280 - 5*contaNumeros)
 
     ; divir tamaño real/cantidad de numeros para saber el ancho de cada bloque
     mov dx, 0 ; Limpiar la parte alta del dividendo
