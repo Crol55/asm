@@ -13,7 +13,7 @@ include macros.asm
     strMenu      db "MENU PRINCIPAL",10,"1) Cargar Archivo",10,"2) Ordenar",10,"3) Generar Reporte",10,"4) Salir",10,'$'
     strSeleccion db "Ingrese el # de operacion que desea realizar:$"
     salto        db 10,'$'
-
+    comma        db ',','$'
     strIngresoArchivo db 10,"Ingrese la ruta del archivo:",'$'
     nombreArchivo db 30 dup('$') ; Para que pueda leer el nombre del archivo debe terminar en null : 0 
     errorExtension db "La extension ingresada no es correcta (.xml)",'$'
@@ -26,7 +26,7 @@ include macros.asm
     strQuick  db "QUICK",'$' 
     strShell  db "SHELL",'$'
     strOrdenamiento  db "Ordenamiento:",'$'
-    strTiempo db "Tiempo:12:30",'$'
+    strTiempo db "Tiempo:12:0",'$'
     strVel    db "Vel:5",'$'
 
     handlerCA    dw 0
@@ -36,7 +36,8 @@ include macros.asm
     lexema db 30 dup('$')
     token db 0
 
-    arrNumeros     dw 25 dup(0);25,25,41,25,15,19,78,80,9,3,10,65,76 ;dup(0)
+    arrNumeros     dw 20 dup(0);25,25,41,25,15,19,78,80,9,3,10,65,76 ;dup(0)
+    arr            dw 20 dup(0)
     contaNumeros   dw 0;13 ; Saber cuantos numeros hay en arrNumeros
     maxVal         dw 0;80 ; Cual de los numeros de arrNumeros es el mayor
     finRect        dw 25 ; (fila) Altura maxima del rectangulo
@@ -55,13 +56,88 @@ include macros.asm
     der dw 0
 
     modoOrdenamiento db 1; Ascendente = 1, Descendente = 2
+
+    strReporte db 1500 dup ('$')
+    ptrReporte dw 0 ; Para saber en que posicion debemos escribir del reporte
+
     fun db "entro",10,'$'
+    pru db "Hola MUNDO$"
+    pru2 db " Hola MUNDO2$"
+    ;Cadenas para xml (reporte)
+    apertura  db "<",'$'
+    aperturaF db "</",'$'
+    cierre    db ">",'$'
+    strArqui        db "<Arqui>",10,'$'
+    strEncabezado   db "<Encabezado>",10
+                    db "<Universidad>Universidad de San Carlos de Guatemala</Universidad>",10
+                    db "<Facultad>Facultad de Ingenieria</Facultad>",10
+                    db "<Escuela>Ciencias y Sistemas</Escuela>",10
+                    db "<Curso>",10,9,"<nombre>Arquitectura de Computadoras y Ensambladores 1</nombre>",10
+                    db 9,"<Seccion>Seccion A </Seccion>",10,"</Curso>",10,"<Ciclo>Primer Semestre 2021</Ciclo>",10,'$'
+    strFecha        db "<Fecha>",10,'$'
+    strAlumno       db "<Alumno>",10,"<Nombre> Carlos Rene Orantes Lara</Nombre>",10
+                    db "<Carnet>201314172</Carnet>",10,"<Alumno>",10,"</Encabezado>",'$'
+
+    fecha           db 4 dup('$')
+    hora            db 4 dup('$')
+
+    xmlBubble       db 300 dup('$') ; Almacenar todo lo relacionado con Bubblesort
+    xmlQuick        db 300 dup('$') ; Almacenar todo lo relacionado con Quicksort
+    xmlShell        db 300 dup('$') ; Almacenar todo lo relacionado con Shellsort
+
+    xmlb            db "<Ordenamiento_BubbleSort>",'$'
+    xmlb2           db "</Ordenamiento_BubbleSort>",'$'
+
+    xmlVel          db "<Velocidad>",'$'
+    xmlVel2         db "</Velovidad>",'$'
+
+    xmlLista        db "<Lista_Entrada>",'$'
+    xmlListaF       db "</Lista_Entrada>",10,'$'
+
+    xmlListaOrd     db "<Lista_Ordenada>",'$'
+    xmlListaOrdF    db "</Lista_Ordenada>",'$'
+
+    strAscendente   db "<Tipo>Ascendente</Tipo>",10, 700 dup ('$')
+    ptrAscendente   dw 24
+    contaAscendente db 0 ; Para evitar reescribir el string 'strAscendente'
+    
+    
+    segundos db 0 
+    contaSeg dw 0
 .code 
 
 main proc
     mov ax, @data 
     mov ds, ax 
     
+    ;strCpy strArqui, strReporte, ptrReporte
+    ;strCpy strEncabezado, strReporte, ptrReporte
+    ;print strReporte 
+    ;; Fecha del bios 
+    ;mov ah, 2ah 
+    ;int 21h ;retorna cx=year, dh=month, dl=dia
+    ;itos cx, fecha 
+    ;limpiarVariable fecha, sizeof fecha
+    ;mov cx, 0
+    ;mov cl, dh 
+    ;itos cx, fecha 
+    ;limpiarVariable fecha, sizeof fecha
+    ;mov cx, 0
+    ;mov cl,dl 
+    ;itos cx, fecha
+    ;; Hora del bios
+    ;mov ah, 2ch 
+    ;int 21h ; retorna ch=hora, cl=minutos
+    ;mov ax,0
+    ;mov al, ch 
+    ;itos ax, hora 
+    ;limpiarVariable hora, sizeof hora
+    ;mov al, cl 
+    ;itos ax, hora
+    ;print salto 
+    ;print hora
+    ;readKeyboard
+   
  ; %%%%%%%%%%%%%% Imprimir el encabezado %%%%%%%%%%%%%%%%%%%%%%%%%%%%
     print encabezado
     displayMenu:
@@ -98,6 +174,7 @@ main proc
                 CALL stoi ; convertir string -> integer, Lo almacenara en la variable 'resultado'
                 mov ax, resultado
                 mov arrNumeros[di], ax
+                mov arr[di],ax ; Copia de los numeros ingresados
                 add di, 2
                 ; contar cuantos numeros hay
                 inc contaNumeros 
@@ -117,32 +194,51 @@ main proc
         
     ordenar:
 
-        
+    bubbleSort:
+        ; if modoOrdenamiento  == 1 -> Ascendente 
+        cmp modoOrdenamiento, 1
+        jne L23
+            INSERT_ASC xmlLista, xmlListaF
+            jmp L26    
+        ;else -> descendente
+        L23:
+            
+        L26: 
+            mov dx, 0
+            mov ax, 2
+            mul contaNumeros ; resultado en AX ,
+            sub ax, 2
 
-        mov dx, 0
-        mov ax, 2
-        mul contaNumeros ; resultado en AX ,
-        sub ax, 2
+            mov der, ax 
 
-        mov der, ax 
+            CALL INI_VIDEO
+            posicionar_cursor 1,0
+            print strOrdenamiento 
+            print strBubble 
+            posicionar_cursor 1,60
+            print strTiempo
+            posicionar_cursor 1,73
+            print strVel
 
-        CALL INI_VIDEO
-        posicionar_cursor 1,0
-        print strOrdenamiento 
-        print strBubble 
-        posicionar_cursor 1,60
-        print strTiempo
-        posicionar_cursor 1,73
-        print strVel
-        
-        CALL QUICKSORT
-        ; Mostrar el arreglo final ordenado
-        limpiar_pantalla
-        CALL GRAFICAR_NUMEROS
-            pausar
-            ;limpiar_pantalla
-        CALL FIN_VIDEO
-        
+            CALL QUICKSORT
+            ; Mostrar el arreglo final ordenado
+            limpiar_pantalla
+            CALL GRAFICAR_NUMEROS
+                pausar
+                ;limpiar_pantalla 
+            CALL FIN_VIDEO
+            ; if modoOrdenamiento  == 1 -> Ascendente 
+            cmp modoOrdenamiento, 1
+            jne L27
+                INSERT_ASC xmlListaOrd, xmlListaOrdF
+                jmp L28    
+            ;else -> descendente
+            L27:
+
+            L28: 
+            print strAscendente 
+            readKeyboard
+            jmp displayMenu
     ;jmp pruebas
     crearReporte:
 
@@ -161,6 +257,12 @@ QUICKSORT proc
     push di
     push ax  
     push bx  ; aux
+
+    ; Obtener tiempo -> segundos en dh 
+
+    mov ah, 2ch
+    int 21h  
+    mov segundos, dh
     
     ;CALL DS_DATOS
 
@@ -204,7 +306,8 @@ QUICKSORT proc
             mov arrNumeros[di], bx 
 
             CALL GRAFICAR_NUMEROS
-            Delay 3000 
+            Delay 3000
+                       
             limpiar_pantalla
         L20:
         
@@ -222,7 +325,7 @@ QUICKSORT proc
     cmp arrNumeros[bx], ax ; A[izq] == ax -> si son iguales no graficar
     je noGraficar
         CALL GRAFICAR_NUMEROS
-        Delay 3000 
+        ;Delay 3000 
         limpiar_pantalla
     noGraficar:
     

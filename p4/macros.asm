@@ -230,11 +230,29 @@ Delay macro constante
     LOCAL D1,D2,Fin
     push si
     push di
-    
+    push ax 
+    push dx 
+
     mov si,constante
     D1:
     dec si
     jz Fin
+        mov  ah, 2ch
+        int  21h ;RETURN SECONDS IN DH.
+        ;CHECK IF ONE SECOND HAS PASSED. 
+        cmp  dh, segundos
+        je   no_change
+        ;IF NO JUMP, ONE SECOND HAS PASSED. VERY IMPORTANT : PRESERVE SECONDS TO
+        ;USE THEM TO COMPARE WITH NEXT SECONDS. THIS IS HOW WE KNOW ONE SECOND
+        ;HAS PASSED.
+         mov  segundos, dh
+         inc contaSeg
+            limpiarVariable strNumero, sizeof strNumero
+            itos contaSeg, strNumero
+            ;add contaSeg, 48
+            posicionar_cursor 1,70
+            print strNumero
+        no_change:
     mov di,constante
     D2:
     dec di
@@ -242,8 +260,95 @@ Delay macro constante
     jmp D1
     
     Fin:
+    pop dx
+    pop ax 
     pop di
     pop si
+endm
+
+
+
+strCpy macro Origen, Destino, ptrDestino 
+    LOCAL for 
+    push si 
+    push di 
+    push cx 
+    push bx 
+    push ax 
+
+    mov di, offset destino 
+    mov si, offset origen
+
+    ;mov cx, SIZEOF Origen ; Tamaño del string que se desea copiar
+    get_length origen ;-> resultado en cx
+    mov bx, ptrDestino       ; Desde donde debe empezar a colocar los caracteres
+    for:  
+        mov al, [si]
+        mov [di + bx], al
+        inc bx
+        inc si 
+    loop for 
+    ; actualizar el id del puntero
+    ;dec bx ; Colocar el puntero al final de '$'
+    mov ptrDestino,bx 
+
+    pop ax 
+    pop bx 
+    pop cx
+    pop di
+    pop si
+
+endm
+
+
+get_length macro string ; Obtener el tamaño de un string -> resultado estara en cx
+    local for, break  
+    push si 
+
+    mov cx,0 ; contador -> 64k palabras es lo maximo que podria contar un contador de 16 bits
+    mov si,0 
+    for:
+        ;if char != '$'
+        cmp string[si], '$'
+        je break
+            inc si 
+            inc cx 
+        jmp for 
+    break:
+
+    pop si
+
+endm 
+
+INSERT_ASC macro texto1, texto2 ; procedimiento que inserta las numeros y numeros ordenados en la cadena de texto para el reporte
+    LOCAL L25, L24, forL23 
+    ;if (conta == 0 || conta == 1) 
+    cmp contaAscendente, 0
+    je  L25
+    cmp contaAscendente, 1  
+    jne L24
+    L25:  
+        strCpy texto1, strAscendente, ptrAscendente 
+        mov cx, contaNumeros
+        mov si, 0  
+        forL23:
+            limpiarVariable strNumero, sizeof strNumero
+            itos arrNumeros[si], strNumero
+            strCpy strNumero, strAscendente, ptrAscendente ;Numeros     
+            strCpy comma, strAscendente, ptrAscendente     ; comma
+            add si, 2
+            dec cx 
+        jnz forL23
+        strCpy texto2, strAscendente, ptrAscendente
+        inc contaAscendente ; Solo ingresara 2 veces, esto para evitar que si ingresan multiples veces a bubblesort, no se concatenen cosas de mas.
+    L24: ; salida de procedimiento 
+endm 
+
+
+get_indice macro valor ; utilizado en algoritmo quicksort
+
+    
+
 endm
 
 ; %%%%%%%%%%%%%%%%%%%%%%%% MACROS PARA MODO VIDEO %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -401,3 +506,4 @@ pausar macro
     int 16h 
     pop ax
 endm 
+
