@@ -6,6 +6,7 @@ include macros.asm
 
 
 .data
+
     encabezado   db "UNIVERSIDAD DE SAN CARLOS DE GUATEMALA",10,"FACULTAD DE INGENIERIA",10
     encabezado1  db "ESCUELA DE CIENCIAS Y SISTEMAS",10,"ARQUITECTURA DE COMPUTADORAS Y ENSAMBLADORES 1 A",10
     encabezado2  db "SECCION A",10,"PRIMER SEMESTRE 2021",10
@@ -26,8 +27,8 @@ include macros.asm
     strQuick  db "QUICK",'$' 
     strShell  db "SHELL",'$'
     strOrdenamiento  db "Ordenamiento:",'$'
-    strTiempo db "Tiempo:12:0",'$'
-    strVel    db "Vel:5",'$'
+    strTiempo db "Tiempo:0:0",'$'
+    strVel    db "Vel:1",'$'
 
     handlerCA    dw 0
     cadena db "52",'$'
@@ -37,7 +38,7 @@ include macros.asm
     token db 0
 
     arrNumeros     dw 20 dup(0);25,25,41,25,15,19,78,80,9,3,10,65,76 ;dup(0)
-    arr            dw 20 dup(0)
+    arr            dw 20 dup(0); Para colocar el arreglo como al inicio 
     contaNumeros   dw 0;13 ; Saber cuantos numeros hay en arrNumeros
     maxVal         dw 0;80 ; Cual de los numeros de arrNumeros es el mayor
     finRect        dw 25 ; (fila) Altura maxima del rectangulo
@@ -55,7 +56,7 @@ include macros.asm
     izq dw 0
     der dw 0
 
-    modoOrdenamiento db 1; Ascendente = 1, Descendente = 2
+    modoOrdenamiento db 2; Ascendente = 1, Descendente = 2
 
     strReporte db 1500 dup ('$')
     ptrReporte dw 0 ; Para saber en que posicion debemos escribir del reporte
@@ -74,9 +75,23 @@ include macros.asm
                     db "<Escuela>Ciencias y Sistemas</Escuela>",10
                     db "<Curso>",10,9,"<nombre>Arquitectura de Computadoras y Ensambladores 1</nombre>",10
                     db 9,"<Seccion>Seccion A </Seccion>",10,"</Curso>",10,"<Ciclo>Primer Semestre 2021</Ciclo>",10,'$'
-    strFecha        db "<Fecha>",10,'$'
-    strAlumno       db "<Alumno>",10,"<Nombre> Carlos Rene Orantes Lara</Nombre>",10
-                    db "<Carnet>201314172</Carnet>",10,"<Alumno>",10,"</Encabezado>",'$'
+    
+    xmlFecha        db "<Fecha>",10,'$'
+    xmlFechaF       db "</Fecha>",10,'$'
+    xmlDia          db 9,"<Dia>",'$'    
+    xmlDiaF         db "</Dia>",10,'$'
+    xmlMes          db 9,"<Mes>",'$'    
+    xmlMesF         db  "</Mes>",10,'$'
+    xmlAnio         db 9,"<Año>",'$'    
+    xmlAnioF        db  "</Año>",10,'$'
+    xmlHora         db 9,"<Hora>",'$'
+    xmlHora2        db "<Hora>",10,'$'    
+    xmlHoraF        db  "</Hora>",10,'$'
+    xmlRes          db "<Resultados>",10,'$'
+    xmlResF         db "</Resultados>",'$'
+
+    strAlumno       db "<Alumno>",10,9,"<Nombre> Carlos Rene Orantes Lara</Nombre>",10
+                    db 9,"<Carnet>201314172</Carnet>",10,"<Alumno>",10,"</Encabezado>",10,'$'
 
     fecha           db 4 dup('$')
     hora            db 4 dup('$')
@@ -85,60 +100,56 @@ include macros.asm
     xmlQuick        db 300 dup('$') ; Almacenar todo lo relacionado con Quicksort
     xmlShell        db 300 dup('$') ; Almacenar todo lo relacionado con Shellsort
 
-    xmlb            db "<Ordenamiento_BubbleSort>",'$'
-    xmlb2           db "</Ordenamiento_BubbleSort>",'$'
+    xmlB            db 9,"<Ordenamiento_BubbleSort>",10,'$'
+    xmlBF           db 9,"</Ordenamiento_BubbleSort>",10,'$'
+    xmlQ            db 9,"<Ordenamiento_QuickSort>",10,'$'
+    xmlQF           db 9,"</Ordenamiento_QuickSort>",10,'$'
 
-    xmlVel          db "<Velocidad>",'$'
-    xmlVel2         db "</Velovidad>",'$'
+    xmlVel          db 9,9,"<Velocidad>",'$'
+    xmlVelF         db "</Velocidad>",10,'$'
 
-    xmlLista        db "<Lista_Entrada>",'$'
+    xmlLista        db 9,"<Lista_Entrada>",'$'
     xmlListaF       db "</Lista_Entrada>",10,'$'
 
-    xmlListaOrd     db "<Lista_Ordenada>",'$'
-    xmlListaOrdF    db "</Lista_Ordenada>",'$'
+    xmlListaOrd     db 9,"<Lista_Ordenada>",'$'
+    xmlListaOrdF    db "</Lista_Ordenada>",10,'$'
 
-    strAscendente   db "<Tipo>Ascendente</Tipo>",10, 700 dup ('$')
-    ptrAscendente   dw 24
+    xmlTiempo       db 9,9,"<Tiempo>",10,'$'
+    xmlTiempoF      db 9,9,"</Tiempo>",10,'$'
+
+    xmlMins       db 9,9,9,"<Minutos>",'$'
+    xmlMinsF      db "</Minutos>",10,'$'
+
+    xmlseg       db 9,9,9,"<Segundos>",'$'
+    xmlSegF      db "</Segundos>",10,'$'
+
+    strAscendente   db 9,"<Tipo>Ascendente</Tipo>",10, 700 dup ('$')
+    ptrAscendente   dw 25
     contaAscendente db 0 ; Para evitar reescribir el string 'strAscendente'
     
-    
+    strDescendente   db 9,"<Tipo>Descendente</Tipo>",10, 700 dup ('$')
+    ptrDescendente   dw 26
+    contaDescendente db 0 ; Para evitar reescribir el string 'strAscendente'
+
+    ; usados en delay
     segundos db 0 
     contaSeg dw 0
+    contaMin dw 0
 
-    indiceAux dw 0
+    ; Entrada de sistema cuando se quiera hacer un ordenamiento
+    strVelocidad db "5",'$'
+    ; Variables para reporte
+    strNombreReporte db "r.xml",0
+    strErrorF db "Error al crear el archivo de reporte.",'$'
+    handleReporte dw 0
+
+    constDelay dw 100
 .code 
 
 main proc
     mov ax, @data 
     mov ds, ax 
     
-    ;strCpy strArqui, strReporte, ptrReporte
-    ;strCpy strEncabezado, strReporte, ptrReporte
-    ;print strReporte 
-    ;; Fecha del bios 
-    ;mov ah, 2ah 
-    ;int 21h ;retorna cx=year, dh=month, dl=dia
-    ;itos cx, fecha 
-    ;limpiarVariable fecha, sizeof fecha
-    ;mov cx, 0
-    ;mov cl, dh 
-    ;itos cx, fecha 
-    ;limpiarVariable fecha, sizeof fecha
-    ;mov cx, 0
-    ;mov cl,dl 
-    ;itos cx, fecha
-    ;; Hora del bios
-    ;mov ah, 2ch 
-    ;int 21h ; retorna ch=hora, cl=minutos
-    ;mov ax,0
-    ;mov al, ch 
-    ;itos ax, hora 
-    ;limpiarVariable hora, sizeof hora
-    ;mov al, cl 
-    ;itos ax, hora
-    ;print salto 
-    ;print hora
-    ;readKeyboard
    
  ; %%%%%%%%%%%%%% Imprimir el encabezado %%%%%%%%%%%%%%%%%%%%%%%%%%%%
     print encabezado
@@ -194,10 +205,15 @@ main proc
         L1:
         jmp displayMenu
         
+   
+    
     ordenar:
 
-    bubbleSort:
-        ; if modoOrdenamiento  == 1 -> Ascendente 
+
+
+    quick_Sort:
+        ; if modoOrdenamiento  == 1 -> Ascendente
+        
         cmp modoOrdenamiento, 1
         jne L23
             INSERT_ASC xmlLista, xmlListaF
@@ -205,18 +221,21 @@ main proc
         ;else -> descendente
         L23:
             
+            INSERT_DESC xmlLista, xmlListaF
+            
         L26: 
             mov dx, 0
             mov ax, 2
             mul contaNumeros ; resultado en AX ,
             sub ax, 2
 
+            mov izq,0
             mov der, ax 
 
             CALL INI_VIDEO
             posicionar_cursor 1,0
             print strOrdenamiento 
-            print strBubble 
+            print strQuick
             posicionar_cursor 1,60
             print strTiempo
             posicionar_cursor 1,73
@@ -226,6 +245,7 @@ main proc
                 pausar
             CALL QUICKSORT
             ; Mostrar el arreglo final ordenado
+            pausar
             limpiar_pantalla
             CALL GRAFICAR_NUMEROS
                 pausar
@@ -234,18 +254,77 @@ main proc
             ; if modoOrdenamiento  == 1 -> Ascendente 
             cmp modoOrdenamiento, 1
             jne L27
-                INSERT_ASC xmlListaOrd, xmlListaOrdF
+                INSERT_ASC xmlListaOrd, xmlListaOrdF ; insertar numeros ordenados 
+                
+                strCpy xmlQ, strAscendente, ptrAscendente
+                strCpy xmlVel, strAscendente, ptrAscendente
+                strCpy strVelocidad, strAscendente, ptrAscendente
+                strCpy xmlVelF, strAscendente, ptrAscendente
+                strCpy xmlTiempo, strAscendente, ptrAscendente
+                strCpy xmlMins, strAscendente, ptrAscendente
+                ; concatenamos los minutos
+                limpiarVariable strNumero, sizeof strNumero
+                itos contaMin, strNumero
+                strCpy strNumero, strAscendente, ptrAscendente  
+                strCpy xmlMinsF, strAscendente, ptrAscendente                
+                ; concatenamos los segundos
+                strCpy xmlSeg, strAscendente, ptrAscendente 
+                limpiarVariable strNumero, sizeof strNumero
+                itos contaSeg, strNumero
+                strCpy strNumero, strAscendente, ptrAscendente 
+                strCpy xmlSegF, strAscendente, ptrAscendente
+                ;
+                strCpy xmlTiempoF, strAscendente, ptrAscendente
+                strCpy xmlQF, strAscendente, ptrAscendente   
                 jmp L28    
-            ;else -> descendente
+            ;else modoOrdenamiento -> descendente
             L27:
+                
+            
+                INSERT_DESC xmlListaOrd, xmlListaOrdF
+                print strDescendente 
+                readKeyboard
+                strCpy xmlQ, strDescendente, ptrDescendente
+                strCpy xmlVel, strDescendente, ptrDescendente
+                strCpy strVelocidad, strDescendente, ptrDescendente
+                strCpy xmlVelF, strDescendente, ptrDescendente
+                strCpy xmlTiempo, strDescendente, ptrDescendente
+                strCpy xmlMins, strDescendente, ptrDescendente
+                ; concatenamos los minutos
+                limpiarVariable strNumero, sizeof strNumero
+                itos contaMin, strNumero
+                strCpy strNumero, strDescendente, ptrDescendente  
+                strCpy xmlMinsF, strDescendente, ptrDescendente                
+                ; concatenamos los segundos
+                strCpy xmlSeg, strDescendente, ptrDescendente 
+                limpiarVariable strNumero, sizeof strNumero
+                itos contaSeg, strNumero
+                strCpy strNumero, strDescendente, ptrDescendente 
+                strCpy xmlSegF, strDescendente, ptrDescendente
+                ;
+                strCpy xmlTiempoF, strDescendente, ptrDescendente
+                strCpy xmlQF, strDescendente, ptrDescendente 
 
             L28: 
-            print strAscendente 
-            readKeyboard
-            jmp displayMenu
-    ;jmp pruebas
-    crearReporte:
+                print strAscendente
+                print strDescendente
+                ; Concatenar el xml de Quicksort 
+                ; Devolver ciertas variables a su estado original, tras finalizar el metodo Quicksort
+                mov bx, 0
+                mov cx, contaNumeros
+                forL3: 
+                    mov ax, arr[bx]
+                    mov arrNumeros[bx],ax 
+                    add bx,2 ; iteracion en un array typo word
+                loop forL3
+                mov contaSeg, 0
+                mov contaMin, 0
 
+            jmp displayMenu
+    
+    crearReporte:
+        CALL REPORTE
+        jmp displayMenu
 
     FIN:
     mov Ah,4Ch
@@ -308,9 +387,9 @@ QUICKSORT proc
             pop bx 
             mov arrNumeros[di], bx 
 
-            Delay 1000 ; arreglar este delay por las variables...
+            Delay constDelay 
             CALL GRAFICAR_NUMEROS
-            Delay 1000
+            Delay constDelay
             ;readKeyboard
             ;pausar
         L20:
@@ -331,9 +410,9 @@ QUICKSORT proc
         ;CALL GRAFICAR_NUMEROS
         borrar_rectangulo bx , anchoRectangulo;***************************
         borrar_rectangulo di , anchoRectangulo;***************************
-        Delay 1000
+        Delay constDelay
         CALL GRAFICAR_NUMEROS
-        Delay 1000
+        Delay constDelay
         ;;Delay 3000 
         ;limpiar_pantalla
 
@@ -355,9 +434,7 @@ QUICKSORT proc
         CALL QUICKSORT
         pop izq 
         pop der
-         
-        ;jmp L22  
-        ;pausa
+
     L21:
         mov bx, di 
         add bx, 2
@@ -423,7 +500,7 @@ GRAFICAR_NUMEROS proc
         L14: 
         
     pintar_marco 20,190,15,305,15
-    ;CALL DS_DATOS
+
     ;Crear todos los rectangulos y colocarle sus respectivos valores+
     forL2:
         ;CALL DS_DATOS ; Apuntar al segmento de datos
@@ -487,9 +564,8 @@ GRAFICAR_NUMEROS proc
         ;%%%%%%%%%%% pintar el rectangulo
         GET_color arrNumeros[si], colorcito
 
-        ;CALL DS_VIDEO ; Apuntar al segmento de videos
         pintar_rectangulo bx,ax,dx,colorcito 
-        ;CALL DS_DATOS
+
         mov bx, ax 
         add bx, 5 ; Agregamos el espaciado entre cada rectangulo
 
@@ -678,6 +754,96 @@ ret
 GET_PosCursor endp
 
 
+REPORTE proc 
+    crearFichero strNombreReporte ; -> AX = handle
+    jc errorR
+        mov handleReporte, ax
+        mov ptrReporte, 0 ; para que cree denuevo el reporte
+        strCpy strArqui, strReporte, ptrReporte
+        strCpy strEncabezado, strReporte, ptrReporte
+        ; Fecha del bios 
+        mov ah, 2ah 
+        int 21h ;retorna cx=year, dh=month, dl=dia
+
+        strCpy xmlFecha, strReporte, ptrReporte 
+        ;copiar dia
+        limpiarVariable fecha, sizeof fecha
+        push cx 
+        mov cx, 0
+        mov cl,dl 
+        itos cx, fecha
+        strCpy xmlDia, strReporte, ptrReporte
+        strCpy fecha, strReporte, ptrReporte
+        strCpy xmlDiaF, strReporte, ptrReporte
+
+        ; Copiar mes
+        limpiarVariable fecha, sizeof fecha
+        mov cx, 0
+        mov cl, dh 
+        itos cx, fecha 
+        strCpy xmlMes, strReporte, ptrReporte
+        strCpy fecha, strReporte, ptrReporte
+        strCpy xmlMesF, strReporte, ptrReporte
+        ; Copiar año
+        pop cx
+        limpiarVariable fecha, sizeof fecha
+        itos cx, fecha
+        strCpy xmlAnio, strReporte, ptrReporte
+        strCpy fecha, strReporte, ptrReporte
+        strCpy xmlAnioF, strReporte, ptrReporte
+
+        strCpy xmlFechaF, strReporte, ptrReporte 
+        
+        ; Hora del bios
+        mov ah, 2ch 
+        int 21h ; retorna ch=hora, cl=minutos, dh=segundos
+        strCpy xmlHora2, strReporte, ptrReporte 
+        mov ax,0
+        mov al, ch 
+        limpiarVariable hora, sizeof hora
+        itos ax, hora 
+        strCpy xmlHora, strReporte, ptrReporte
+        strCpy hora, strReporte, ptrReporte
+        strCpy xmlHoraF, strReporte, ptrReporte
+        ; set minutos
+        limpiarVariable hora, sizeof hora
+        mov al, cl 
+        itos ax, hora
+        strCpy xmlMins, strReporte, ptrReporte 
+        strCpy hora, strReporte, ptrReporte
+        strCpy xmlMinsF, strReporte, ptrReporte
+        
+        ; set segundos
+        limpiarVariable hora, sizeof hora
+        mov al, dh 
+        itos ax, hora
+        strCpy xmlSeg, strReporte, ptrReporte 
+        strCpy hora, strReporte, ptrReporte
+        strCpy xmlSegF, strReporte, ptrReporte
+        strCpy xmlHoraF, strReporte, ptrReporte
+        ;set alumno 
+        strCpy strAlumno, strReporte, ptrReporte
+        ;Resultados 
+        strCpy xmlRes, strReporte, ptrReporte
+        strCpy strAscendente, strReporte, ptrReporte
+        strCpy strDescendente, strReporte, ptrReporte
+        strCpy xmlResF, strReporte, ptrReporte
+        ; Escribir en el fichero
+        writeFichero handleReporte, strReporte, ptrReporte
+        cerrarFichero handleReporte
+        ;readKeyboard 
+        ;readKeyboard
+        ;Imprimir la cabecera
+        ;writeFichero handleReporte, strEncabezado, 45
+        ;cerrarFichero handleReporte
+        
+        jmp L11
+    errorR:
+        print strErrorF
+    L11:
+
+ret ; utiliza stack para retornar
+REPORTE endp
 
 end main
 

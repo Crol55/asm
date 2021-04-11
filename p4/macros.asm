@@ -31,7 +31,7 @@ readKeyboard macro ; El caracter leido es colocado en Al
     int 21h
 endm 
 
-
+;%%%%%%%%%%%%%%%%%%%%%%%%%%% OPERACIONES CON ARCHIVOS/FICHEROS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 abrirFichero macro archivo, handler
     mov AH, 3DH
     mov Al, 02 ; Abrir lectura y escritura 
@@ -59,6 +59,22 @@ cerrarFichero macro handle
     int 21h
 endm
 
+crearFichero macro nombre 
+        
+    mov ah, 3CH
+    mov cx, 00H ; FICHERO NORMAL
+    mov dx, offset nombre ; nombre del fichero
+    int 21h    
+endm
+
+writeFichero macro handler, cadena, numBytes
+    mov ah, 40H
+    mov bx, handler       ; puntero al archivo
+    mov cx, numBytes      ; cantidad de bytes a escribir
+    mov dx, offset cadena ; bytes de donde se sacara la informacion
+    int 21h
+endm
+;%%%%%%%%%%%%%%%%%%%%%%%%%%%% FIN %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 analizadorLexico macro buffer, lexema, token ; su funcion es formar un lexema
     LOCAL for,estado0, estado1, estadofinal, fin 
@@ -228,7 +244,7 @@ endm
 
 
 Delay macro constante
-    LOCAL D1,D2,Fin, no_change
+    LOCAL D1,D2,Fin, no_change, contar_minutos,L1
     push si
     push di
     push ax 
@@ -247,12 +263,27 @@ Delay macro constante
         ;USE THEM TO COMPARE WITH NEXT SECONDS. THIS IS HOW WE KNOW ONE SECOND
         ;HAS PASSED.
          mov  segundos, dh
-         inc contaSeg
+        ; Verificar si el 'segundo' es 59
+        cmp contaSeg, 59
+        je contar_minutos
+            inc contaSeg
+            jmp L1
+
+        contar_minutos:
+            mov contaSeg, 0 ; reiniciar el contador de segundos
+            ; Imprimir en pantalla los minutos
+            inc contaMin
+            limpiarVariable strNumero, sizeof strNumero
+            itos contaMin, strNumero
+            posicionar_cursor 1,67
+            print strNumero
+        
+        L1: ; Imprimir en pantalla los segundos
             limpiarVariable strNumero, sizeof strNumero
             itos contaSeg, strNumero
-            ;add contaSeg, 48
-            posicionar_cursor 1,70
+            posicionar_cursor 1,69
             print strNumero
+
         no_change:
     mov di,constante
     D2:
@@ -346,16 +377,73 @@ INSERT_ASC macro texto1, texto2 ; procedimiento que inserta las numeros y numero
 endm 
 
 
+INSERT_DESC macro texto1, texto2 ; procedimiento que inserta las numeros y numeros ordenados en la cadena de texto para el reporte
+    LOCAL L25, L24, forL23, forL24 
+    ;if (conta == 0 ) 
+    cmp contaDescendente, 0
+    jne  L25
+        strCpy texto1, strDescendente, ptrDescendente 
+        mov cx, contaNumeros
+        mov si, 0  
+        forL23:
+            limpiarVariable strNumero, sizeof strNumero
+            itos arrNumeros[si], strNumero
+            strCpy strNumero, strDescendente, ptrDescendente ;Numeros     
+            strCpy comma, strDescendente, ptrDescendente     ; comma
+            add si, 2
+            dec cx 
+        jnz forL23
+        strCpy texto2, strDescendente, ptrDescendente
+        inc contaDescendente ; Solo ingresara 2 veces, esto para evitar que si ingresan multiples veces a bubblesort, no se concatenen cosas de mas.
+        jmp L24
+    L25:
+    ;else if (conta == 1)
+    cmp contaDescendente, 1  
+    jne L24
+        strCpy texto1, strDescendente, ptrDescendente 
+        mov cx, contaNumeros
+        ; posicionarse al final del array
+         mov dx, 0 
+         mov ax, 2
+         mul contaNumeros
+         sub ax, 2 ; EJEMPLO!!!->(10*2)-2 ->Iniciaria desde el final, hacia 0
+         mov si, ax 
+        forL24:
+            limpiarVariable strNumero, sizeof strNumero
+            itos arrNumeros[si], strNumero
+            strCpy strNumero, strDescendente, ptrDescendente ;Numeros     
+            strCpy comma, strDescendente, ptrDescendente     ; comma
+            sub si, 2
+            dec cx 
+        jnz forL24
+        strCpy texto2, strDescendente, ptrDescendente
+        inc contaDescendente ; Solo ingresara 2 veces, esto para evitar que si ingresan multiples veces a bubblesort, no se concatenen cosas de mas.  
+        
+    L24: ; salida de procedimiento 
+endm 
+
 borrar_rectangulo macro indice,ancho ; utilizado en algoritmo quicksort indice = (si | di)
-    LOCAL forcol, forfila
-    
+    LOCAL forcol, forfila, L1
+     
     push di 
     push si 
     push ax 
     push dx 
     push cx 
     push bx 
+    push ax
 
+    cmp modoOrdenamiento, 2
+    jne L1 ; El borrado es en el indice indicado
+        mov dx, 0 
+        mov ax, 2
+        mul contaNumeros ; resultado en ax
+
+        sub ax, 2  
+        sub ax, indice 
+        mov indice, ax 
+        
+    L1:
     ; ej 18/2 = 9
     mov dx, 0 
     mov ax, indice 
@@ -404,6 +492,7 @@ borrar_rectangulo macro indice,ancho ; utilizado en algoritmo quicksort indice =
 
     pop ancho
     
+    pop ax
     pop bx
     pop cx 
     pop dx 
