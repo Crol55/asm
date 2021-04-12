@@ -56,7 +56,7 @@ include macros.asm
     izq dw 0
     der dw 0
 
-    modoOrdenamiento db 2; Ascendente = 1, Descendente = 2
+    modoOrdenamiento db 1; Ascendente = 1, Descendente = 2
 
     strReporte db 1500 dup ('$')
     ptrReporte dw 0 ; Para saber en que posicion debemos escribir del reporte
@@ -68,6 +68,12 @@ include macros.asm
     apertura  db "<",'$'
     aperturaF db "</",'$'
     cierre    db ">",'$'
+    strOrd    db 10,"Seleccione Ordenamiento:",10,"1) Ordenamiento BubbleSort",10
+              db "2) Ordenamiento QuickSort",10,"3) Ordenamiento ShellSort",10
+              db "Ingrese #:",'$'
+    strIngVel db "Ingrese una velocidad (0-9):",'$'
+    strIngOrd db 10,"Ingrese tipo de ordenamiento",10,"1) Ascendente",10
+              db "2) Descendente",10,"valor #:",'$'
     strArqui        db "<Arqui>",10,'$'
     strEncabezado   db "<Encabezado>",10
                     db "<Universidad>Universidad de San Carlos de Guatemala</Universidad>",10
@@ -143,7 +149,9 @@ include macros.asm
     strErrorF db "Error al crear el archivo de reporte.",'$'
     handleReporte dw 0
 
-    constDelay dw 100
+    constDelay dw 1000
+    conta db 0 ; utilizado en void_bubblesort
+    buff db 2,0,0,0   ; Acepta 1 caracter + cret
 .code 
 
 main proc
@@ -208,19 +216,189 @@ main proc
    
     
     ordenar:
+        ;%%%%%%%%% Menu para ordenamiento
+        print strOrd
+        readCadenaTeclado buff
+        cmp buff+2, '1'
+        je bubble_sort
+        cmp buff+2, '2'
+        je quick_Sort 
+        ;cmp buff+2, '3'
+        jmp ordenar
 
+
+
+    bubble_sort: 
+
+        ; Ingreso de velocidad
+        vel: 
+            print salto
+            print strIngVel 
+            ;readCadenaTeclado buff
+            readKeyboard ; -> AL 
+            cmp al, '0' 
+            jb vel 
+            cmp al,'9' 
+            ja vel 
+            ; calcular delay 200 + vel*(200)
+            mov dx, 0
+            sub al, 48 
+            cbw ;-> ax
+            mov cx, 200
+            mul cx
+            add ax, 200
+            mov constDelay, ax ; se almacena el delay
+        ; Ingreso de ordenamiento
+        ord: 
+            print strIngOrd 
+            readKeyboard ; resultado en AL
+            sub al , 48 ; convertir a integer 
+            cmp al, 1 
+            je inicio 
+            cmp al, 2 
+            jne ord 
+            mov modoOrdenamiento, al
+        ; if modoOrdenamiento  == 1 -> Ascendente
+        inicio:
+     
+        cmp modoOrdenamiento, 1
+        jne L29
+            INSERT_ASC xmlLista, xmlListaF
+            jmp L30    
+        ;else -> descendente
+        L29:
+            INSERT_DESC xmlLista, xmlListaF
+
+        L30:
+            CALL INI_VIDEO
+             posicionar_cursor 1,0
+             print strOrdenamiento 
+             print strBubble
+             posicionar_cursor 1,60
+             print strTiempo
+             posicionar_cursor 1,73
+             print strVel
+            CALL GRAFICAR_NUMEROS
+                pausar
+            CALL void_bubbleSort
+            ; Mostrar el arreglo final ordenado
+            pausar
+            limpiar_pantalla
+            CALL GRAFICAR_NUMEROS
+                pausar
+            CALL FIN_VIDEO
+            ; if modoOrdenamiento  == 1 -> Ascendente 
+            cmp modoOrdenamiento, 1
+            jne L31
+                INSERT_ASC xmlListaOrd, xmlListaOrdF ; insertar numeros ordenados 
+                
+                strCpy xmlB, strAscendente, ptrAscendente
+                strCpy xmlVel, strAscendente, ptrAscendente
+                strCpy strVelocidad, strAscendente, ptrAscendente
+                strCpy xmlVelF, strAscendente, ptrAscendente
+                strCpy xmlTiempo, strAscendente, ptrAscendente
+                strCpy xmlMins, strAscendente, ptrAscendente
+                ; concatenamos los minutos
+                limpiarVariable strNumero, sizeof strNumero
+                itos contaMin, strNumero
+                strCpy strNumero, strAscendente, ptrAscendente  
+                strCpy xmlMinsF, strAscendente, ptrAscendente                
+                ; concatenamos los segundos
+                strCpy xmlSeg, strAscendente, ptrAscendente 
+                limpiarVariable strNumero, sizeof strNumero
+                itos contaSeg, strNumero
+                strCpy strNumero, strAscendente, ptrAscendente 
+                strCpy xmlSegF, strAscendente, ptrAscendente
+                ;
+                strCpy xmlTiempoF, strAscendente, ptrAscendente
+                strCpy xmlBF, strAscendente, ptrAscendente   
+                jmp L32    
+            ;else modoOrdenamiento -> descendente
+            L31:
+                print fun
+                print fun 
+                print fun
+                INSERT_DESC xmlListaOrd, xmlListaOrdF
+                print strDescendente 
+                readKeyboard
+                strCpy xmlB, strDescendente, ptrDescendente
+                print strDescendente
+                strCpy xmlVel, strDescendente, ptrDescendente
+                strCpy strVelocidad, strDescendente, ptrDescendente
+                strCpy xmlVelF, strDescendente, ptrDescendente
+                strCpy xmlTiempo, strDescendente, ptrDescendente
+                strCpy xmlMins, strDescendente, ptrDescendente
+                ; concatenamos los minutos
+                limpiarVariable strNumero, sizeof strNumero
+                itos contaMin, strNumero
+                strCpy strNumero, strDescendente, ptrDescendente  
+                strCpy xmlMinsF, strDescendente, ptrDescendente                
+                ; concatenamos los segundos
+                strCpy xmlSeg, strDescendente, ptrDescendente 
+                limpiarVariable strNumero, sizeof strNumero
+                itos contaSeg, strNumero
+                strCpy strNumero, strDescendente, ptrDescendente 
+                strCpy xmlSegF, strDescendente, ptrDescendente
+
+                strCpy xmlTiempoF, strDescendente, ptrDescendente
+                strCpy xmlBF, strDescendente, ptrDescendente 
+        
+            L32: 
+                ;print strAscendente
+                ;print strDescendente
+                ; Concatenar el xml de Bubblesort 
+                ; Devolver ciertas variables a su estado original, tras finalizar el metodo Quicksort
+                mov bx, 0
+                mov cx, contaNumeros
+                forL4: 
+                    mov ax, arr[bx]
+                    mov arrNumeros[bx],ax 
+                    add bx,2 ; iteracion en un array typo word
+                loop forL4
+                mov contaSeg, 0
+                mov contaMin, 0
+    jmp displayMenu
 
 
     quick_Sort:
+
+        ; Ingreso de velocidad
+        vel_1: 
+            print salto
+            print strIngVel 
+            ;readCadenaTeclado buff
+            readKeyboard ; -> AL 
+            cmp al, '0' 
+            jb vel_1 
+            cmp al,'9' 
+            ja vel_1 
+            ; calcular delay 200 + vel*(200)
+            mov dx, 0
+            sub al, 48 
+            cbw ;-> ax
+            mov cx, 200
+            mul cx
+            add ax, 200
+            mov constDelay, ax ; se almacena el delay
+        ; Ingreso de ordenamiento
+        ord_1: 
+            print strIngOrd 
+            readKeyboard ; resultado en AL
+            sub al , 48 ; convertir a integer 
+            cmp al, 1 
+            je inicio_1
+            cmp al, 2 
+            jne ord_1 
+            mov modoOrdenamiento, al
         ; if modoOrdenamiento  == 1 -> Ascendente
-        
+        inicio_1:
+        ; if modoOrdenamiento  == 1 -> Ascendente
         cmp modoOrdenamiento, 1
         jne L23
             INSERT_ASC xmlLista, xmlListaF
             jmp L26    
         ;else -> descendente
         L23:
-            
             INSERT_DESC xmlLista, xmlListaF
             
         L26: 
@@ -233,13 +411,13 @@ main proc
             mov der, ax 
 
             CALL INI_VIDEO
-            posicionar_cursor 1,0
-            print strOrdenamiento 
-            print strQuick
-            posicionar_cursor 1,60
-            print strTiempo
-            posicionar_cursor 1,73
-            print strVel
+             posicionar_cursor 1,0
+             print strOrdenamiento 
+             print strQuick
+             posicionar_cursor 1,60
+             print strTiempo
+             posicionar_cursor 1,73
+             print strVel
             
             CALL GRAFICAR_NUMEROS
                 pausar
@@ -320,7 +498,7 @@ main proc
                 mov contaSeg, 0
                 mov contaMin, 0
 
-            jmp displayMenu
+    jmp displayMenu
     
     crearReporte:
         CALL REPORTE
@@ -413,8 +591,7 @@ QUICKSORT proc
         Delay constDelay
         CALL GRAFICAR_NUMEROS
         Delay constDelay
-        ;;Delay 3000 
-        ;limpiar_pantalla
+
 
         ;limpiarVariable strNumero, sizeof strNumero 
         ;itos ax, strNumero 
@@ -452,6 +629,50 @@ QUICKSORT proc
     
 ret
 QUICKSORT endp 
+
+
+void_bubbleSort proc 
+
+    ; arrNumeros.length - 1  
+     mov ax, contaNumeros 
+     mov ch, al
+     dec ch 
+
+    a1:
+    mov cl, ch
+    lea si, arrNumeros
+    mov conta, 0
+    
+    rept1:
+    mov ax, [si]
+    add si,2
+    cmp ax, [si]
+    jbe next1
+    xchg ax, [si]
+    mov [si-2], ax
+    ;push cx
+        mov al, conta 
+        cbw ; -> Ah
+        mov di, ax 
+        borrar_rectangulo di,anchoRectangulo;***************************
+        add ax,2 
+        mov di, ax 
+        borrar_rectangulo di,anchoRectangulo;***************************
+        Delay constDelay
+        CALL GRAFICAR_NUMEROS
+        Delay constDelay
+    ;pop cx
+    next1:
+    add conta,2
+    dec cl
+    jnz rept1
+    dec ch
+    jnz a1
+
+            
+   
+ret 
+void_bubbleSort endp 
 
 
 GRAFICAR_NUMEROS proc 

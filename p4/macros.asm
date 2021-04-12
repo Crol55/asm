@@ -31,6 +31,14 @@ readKeyboard macro ; El caracter leido es colocado en Al
     int 21h
 endm 
 
+
+readCadenaTeclado macro buffer; lee cadena del teclado y lo inserta en la direccion de memoria de buffer
+    mov ah, 0AH
+    mov dx, offset buffer
+    int 21h
+endm
+
+
 ;%%%%%%%%%%%%%%%%%%%%%%%%%%% OPERACIONES CON ARCHIVOS/FICHEROS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 abrirFichero macro archivo, handler
     mov AH, 3DH
@@ -249,6 +257,7 @@ Delay macro constante
     push di
     push ax 
     push dx 
+    push cx 
 
     mov si,constante
     D1:
@@ -292,6 +301,7 @@ Delay macro constante
     jmp D1
     
     Fin:
+    pop cx
     pop dx
     pop ax 
     pop di
@@ -422,7 +432,7 @@ INSERT_DESC macro texto1, texto2 ; procedimiento que inserta las numeros y numer
     L24: ; salida de procedimiento 
 endm 
 
-borrar_rectangulo macro indice,ancho ; utilizado en algoritmo quicksort indice = (si | di)
+borrar_rectangulo macro indice,ancho ;Usar (di|si|variable word) -> Indice debe estar multiplicado por 2
     LOCAL forcol, forfila, L1
      
     push di 
@@ -431,7 +441,7 @@ borrar_rectangulo macro indice,ancho ; utilizado en algoritmo quicksort indice =
     push dx 
     push cx 
     push bx 
-    push ax
+    ;push ax
 
     cmp modoOrdenamiento, 2
     jne L1 ; El borrado es en el indice indicado
@@ -492,7 +502,7 @@ borrar_rectangulo macro indice,ancho ; utilizado en algoritmo quicksort indice =
 
     pop ancho
     
-    pop ax
+    ;pop ax
     pop bx
     pop cx 
     pop dx 
