@@ -264,13 +264,11 @@ Delay macro constante
     dec si
     jz Fin
         mov  ah, 2ch
-        int  21h ;RETURN SECONDS IN DH.
-        ;CHECK IF ONE SECOND HAS PASSED. 
+        int  21h ;RETURNA SECONDS en DH.
+        ;Chqeuar si ya paso un segundo. 
         cmp  dh, segundos
         je   no_change
-        ;IF NO JUMP, ONE SECOND HAS PASSED. VERY IMPORTANT : PRESERVE SECONDS TO
-        ;USE THEM TO COMPARE WITH NEXT SECONDS. THIS IS HOW WE KNOW ONE SECOND
-        ;HAS PASSED.
+        ;Si no salta, entonces implica que paso 1 segundo
          mov  segundos, dh
         ; Verificar si el 'segundo' es 59
         cmp contaSeg, 59

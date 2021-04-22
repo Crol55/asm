@@ -241,6 +241,8 @@ main proc
             cmp al,'9' 
             ja vel 
             ; calcular delay 200 + vel*(200)
+            mov strVelocidad, al
+            mov strVel+4,al
             mov dx, 0
             sub al, 48 
             cbw ;-> ax
@@ -284,8 +286,8 @@ main proc
             ; Mostrar el arreglo final ordenado
             pausar
             limpiar_pantalla
-            CALL GRAFICAR_NUMEROS
-                pausar
+            ;CALL GRAFICAR_NUMEROS
+            ;pausar
             CALL FIN_VIDEO
             ; if modoOrdenamiento  == 1 -> Ascendente 
             cmp modoOrdenamiento, 1
@@ -315,14 +317,12 @@ main proc
                 jmp L32    
             ;else modoOrdenamiento -> descendente
             L31:
-                print fun
-                print fun 
-                print fun
+                
                 INSERT_DESC xmlListaOrd, xmlListaOrdF
-                print strDescendente 
-                readKeyboard
+                ;print strDescendente 
+                ;readKeyboard
                 strCpy xmlB, strDescendente, ptrDescendente
-                print strDescendente
+                ;print strDescendente
                 strCpy xmlVel, strDescendente, ptrDescendente
                 strCpy strVelocidad, strDescendente, ptrDescendente
                 strCpy xmlVelF, strDescendente, ptrDescendente
@@ -348,6 +348,7 @@ main proc
                 ;print strDescendente
                 ; Concatenar el xml de Bubblesort 
                 ; Devolver ciertas variables a su estado original, tras finalizar el metodo Quicksort
+                mov modoOrdenamiento, 1 ; por defecto sera 1
                 mov bx, 0
                 mov cx, contaNumeros
                 forL4: 
@@ -373,6 +374,8 @@ main proc
             cmp al,'9' 
             ja vel_1 
             ; calcular delay 200 + vel*(200)
+            mov strVelocidad, al
+            mov strVel+4,al
             mov dx, 0
             sub al, 48 
             cbw ;-> ax
@@ -382,7 +385,7 @@ main proc
             mov constDelay, ax ; se almacena el delay
         ; Ingreso de ordenamiento
         ord_1: 
-            print strIngOrd 
+            print strIngOrd
             readKeyboard ; resultado en AL
             sub al , 48 ; convertir a integer 
             cmp al, 1 
@@ -425,8 +428,8 @@ main proc
             ; Mostrar el arreglo final ordenado
             pausar
             limpiar_pantalla
-            CALL GRAFICAR_NUMEROS
-                pausar
+            ;CALL GRAFICAR_NUMEROS
+            ;pausar
                 ;limpiar_pantalla 
             CALL FIN_VIDEO
             ; if modoOrdenamiento  == 1 -> Ascendente 
@@ -460,8 +463,8 @@ main proc
                 
             
                 INSERT_DESC xmlListaOrd, xmlListaOrdF
-                print strDescendente 
-                readKeyboard
+                ;print strDescendente 
+                ;readKeyboard
                 strCpy xmlQ, strDescendente, ptrDescendente
                 strCpy xmlVel, strDescendente, ptrDescendente
                 strCpy strVelocidad, strDescendente, ptrDescendente
@@ -488,6 +491,7 @@ main proc
                 print strDescendente
                 ; Concatenar el xml de Quicksort 
                 ; Devolver ciertas variables a su estado original, tras finalizar el metodo Quicksort
+                mov modoOrdenamiento, 1 ; por defecto sera 1
                 mov bx, 0
                 mov cx, contaNumeros
                 forL3: 
