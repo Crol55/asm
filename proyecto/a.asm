@@ -33,7 +33,8 @@ include macros.asm
     varComando7      db "cmin"
     varComando8      db "limpiar"
     varComando9      db "info"
-    varComando10      db "reporte"
+    varComando10     db "reporte"
+    varComando11     db "barra"
     varResultado     db 0   ; resultado de la comparacion de strings default 0
     ; Variables para fichero/archivos
     handlerLF        dw 0
@@ -71,8 +72,45 @@ include macros.asm
     ; VARIABLES PARA INFO
     varInfo db 'ARQUITECTURA DE COMPUTADORES Y ENSAMBLADORES 1',10,'SECCION A',10
             db 'PRIMER SEMESTRE 2021',10,'CARLOS RENE ORANTES LARA',10,'201314172',10
-            db 'Proyecto 2 Assembler',10,'$'    
-  
+            db 'Proyecto 2 Assembler',10,'$' 
+    ; VARIABLES PARA REPORTE
+        strReporte db 1500 dup ('$')
+        ptrReporte dw 0 ; Para saber en que posicion debemos escribir del reporte
+        strNombreReporte db "201314172.txt",0
+        strErrorF db "Error al crear el archivo de reporte.",'$'
+        handleReporte dw 0
+        strbarra db "/",'$'
+        strdp    db ":",'$'
+        strpunto db ".",'$'
+        strDatosE db "DATOS DE ESTUDIANTE",10,"Nombre: Carlos Rene Orantes Lara",10
+                  db "Carnet:201314172",10,"Seccion:A",10,'$'
+        strFecha    db "Fecha:",'$'
+        strHora     db 10,"Hora:",'$'
+        fecha       db 4 dup('$')
+        hora        db 4 dup('$')
+        strCalc     db 10,"CALCULOS REALIZADOS EN LOS DATOS DE ENTRADA",'$'
+        strMediana  db 10,"Mediana = ",'$'
+        strPromedio db 10,"Promedio = ",'$'
+        strModa     db 10,"Moda = ",'$'
+        strMax      db 10,"Maximo = ",'$'
+        strMin      db 10,"Minimo = ",'$'
+        strfrec     db 10,"TABLA DE FRECUENCIAS",10
+                    db "|   No  |  Frequencia  |",10,'$'
+        strTab      db "    ",'$'
+        strB        db "|",'$'
+        enteroCprom     dw 0
+        decimalCprom    dw 0
+        enteroCmediana  dw 0
+        decimalCmediana dw 0
+        aux dw 0 ; para iterar el hash de ser necesario
+    ;VARIABLES PARA MODO VIDEO 
+        varPosCursor     db 0
+        anchoRectangulo dw 0
+        varExcede        db 0 ; Flag para saber si el ancho de los rectangulos es < 20 
+        varDesproporcion dw 0 ; Cambia de valor si la altura del rectangulo estara desproporcionada
+        modoOrdenamiento db 1; Ascendente = 1, Descendente = 2 -> se puede retirar ahorita
+        colorcito        dw 10
+        ;arrNumeros     dw 20 dup(0);25,25,41,25,15,19,78,80,9,3,10,65,76 ;dup(0) ; inservible de momento
 .code 
 main proc 
     mov ax, @data 
@@ -163,10 +201,17 @@ main proc
         reporte: 
             compararStrings varBufferEntrada+2, varComando10, varBufferEntrada + 1, varResultado   ;limpiar
             cmp varResultado, 1 
+            jne gbarra_asc
+                ;printChar 'R'
+                CALL ejecutar_reporte 
+                jmp ret_consola
+        gbarra_asc: 
+            compararStrings varBufferEntrada+2, varComando11, varBufferEntrada + 1, varResultado   ;limpiar
+            cmp varResultado, 1 
             jne csalir
-                printChar 'R'
-                
-                jmp ret_consola     
+                CALL barras_ascendente
+                CALL ejecutar_reporte 
+                jmp ret_consola        
         csalir: 
             compararStrings varBufferEntrada+2, varComando5, varBufferEntrada + 1, varResultado ; salir
             cmp varResultado, 1 
@@ -351,7 +396,13 @@ ejecutar_cprom proc
     ;print strNumero
     print salto
     print varStrConsola
-    division_decimal res,contaNumeros
+    division_decimal res,contaNumeros ; mete el valor en entero y decimal
+    ; Guardar los valores globalmente
+    mov ax, entero 
+    mov enteroCprom, ax 
+    mov ax, decimal 
+    mov decimalCprom, ax
+    ; Imprimirlos en pantalla
     limpiarVariable strNumero, sizeof strNumero
     itos entero, strNumero
     print strNumero
@@ -405,6 +456,12 @@ ejecutar_cmediana proc
         ;print salto
         print varStrConsola
         division_decimal varTemp,2 ; modifica variable entero y decimal
+        ; Guardar los valores globalmente
+            mov ax, entero 
+            mov enteroCmediana, ax 
+            mov ax, decimal 
+            mov decimalCmediana, ax
+
         limpiarVariable strNumero, sizeof strNumero
         itos entero, strNumero
         print strNumero
@@ -423,6 +480,12 @@ ejecutar_cmediana proc
 
         mov bx, ax ; 
         limpiarVariable strNumero, sizeof strNumero
+        mov ax , arrNumeros[bx]
+        mov entero, ax
+        ; Guardar los valores globalmente
+            ;mov ax, entero 
+            mov enteroCmediana, ax 
+            mov decimalCmediana, 0 ; valor por defecto para no arruinar calculos futuros
         itos arrNumeros[bx], strNumero
         print salto
         print varStrConsola
@@ -496,10 +559,7 @@ ejecutar_cmoda proc
                     mov ax, [di]                    ;dato que se esta analizando
                     mov (nodo ptr [si]).val , ax
                     mov (nodo ptr [si]).conta , 1 
-                    ;printChar 'N'
-                    ;printChar 'N'
-                    ;printChar 'N'
-                    ;printChar 'N'
+                    
                 jmp continuar ; se sale del ciclo
             noNull:
                 ;if (nodo.val == dato) -> Si es igual incrementar el contador
@@ -540,9 +600,14 @@ ejecutar_cmoda proc
         add si,4 ; 
     jmp buscarModa 
     finModa:
-    mov bx, valModa
-    add bl, 39
-    printChar bl
+        print varStrConsola
+        limpiarVariable strNumero, sizeof strNumero
+        itos valModa, strNumero
+        print strNumero
+        print salto
+    ;mov bx, valModa
+    ;add bl, 39
+    ;printChar bl
     ; verficar si todo esta bien
     ;lea bx, hash
     ;;mov (nodo ptr [bx]).val , 'A'
@@ -553,6 +618,346 @@ ejecutar_cmoda proc
 
  ret 
 ejecutar_cmoda endp 
+
+
+
+GRAFICAR_NUMEROS proc 
+    push ax 
+    push bx 
+    push dx
+    push cx
+    push si
+    ; Aqui hacer operaciones con el hash (calcular -> cantidad de numeros en el hash y valor de frequencia mas alto (moda))
+    ;CALL DS_DATOS
+    ; %%%%%%%%%%%% Calcular el ancho que deben tener los rectangulos %%%%%%%%%%%%%%%%%
+    mov contaNumeros, 6;  ->>>>>>>>>>>>>>>>>> remover esta instruccion
+    mov ax, contaNumeros
+    mov bx, 5   ; Espaciado entre cada rectangulo 
+    mul bx ; Resultado en DX,AX -> Si no supera los 16 bits entonces el resultado estara en AX
+
+    mov bx, 280 ; Tamaño maximo disponible para poder alojar los rectangulos
+    sub bx, ax  ; Tamaño real para alojar los bloques para que cada uno tenga una espaciado de '5' -> (280 - 5*contaNumeros)
+
+    ; divir tamaño real/cantidad de numeros para saber el ancho de cada bloque
+    mov dx, 0 ; Limpiar la parte alta del dividendo
+    mov ax,bx ; Set la parte baja del dividendo  (bx)
+    div contaNumeros ; divisor -> cociente ax, residuo dx
+    ; El tamaño de cada rectangulo estara en AX
+    mov anchoRectangulo, ax
+    cmp ax, 20 ; Verificar si el ancho del rectangulo es menor a 20
+    JAE continuarL1 
+        mov varExcede, 1 ; Indicando que los numeros ya no caben y deben desplegarse verticalmente
+
+    continuarL1:
+        mov bx, 20 ; columna inicial donde iniciara el primer rectangulo
+        mov cx, 0  ; iterar en los numeros ingresados en la hash
+        mov ax, 0  ; limpiar ax
+        mov si,0   ;->>>>>>>>>>>>>>> instruccion recien ingresada
+        ; if (modoOrdenamiento == 1) -> Ascendente 
+        ;ascendente: 
+        ;    cmp modoOrdenamiento, 1
+        ;    jne descendente 
+        ;    mov si, 0  ; Para ingresar a 'arrNumeros'
+        ;    jmp L14
+        ;descendente:
+        ;; else (modoOrdenamiento es 2)
+        ;    mov dx, 0 
+        ;    mov ax, 2
+        ;    mul contaNumeros
+        ;    sub ax, 2 ; EJEMPLO!!!->(10*2)-2 ->Iniciaria desde el final, hacia 0
+        ;    mov si, ax
+        ;L14: 
+        
+    ;pintar_marco 20,190,15,305,15
+
+    ;Crear todos los rectangulos y colocarle sus respectivos valores
+    forL2:
+        cmp cx, contaNumeros
+        je finL2 ; salir del for
+
+        ;%%%%%%%%%%% Calcular la altura del rectangulo, respecto al valor mas grande
+        mov ax, bx 
+        add ax, anchoRectangulo
+        ;Calcular altura del rectangulo -> 25 +(num mayor - num actual) + "if(maxval/arrNumeros[si] > 2) sumar -> 50"
+        mov dx, maxVal
+        ;printChar dl
+        sub dx, arrNumeros[si]
+        add dx, 25 ; dx tendra la altura del rectangulo
+
+        ; Arreglar la posible desproporcion si un numero es muy pequeño if(maxval/arrNumeros[si] > 2) sumar -> (130 - MaxVal)
+        push dx 
+        push ax 
+            mov dx, 0 
+            mov ax, maxVal
+            div arrNumeros[si] ; AX -> Cociente 
+            cmp ax, 2
+            JBE noDesproporcion
+                mov ax, 130 
+                sub ax, maxVal
+                mov varDesproporcion, ax ; ( 130 - Maxval)
+                jmp finL4
+            noDesproporcion:
+                mov varDesproporcion, 0
+            finL4:
+        pop ax 
+        pop dx 
+
+        add dx, varDesproporcion  ; varDesproporcion puede ser ( 0 | x)
+
+        ;%%%%%%%%%%% Colocar Numero
+        limpiarVariable strNumero, SIZEOF strNumero
+        itos arrNumeros[si], strNumero 
+
+        CALL GET_PosCursor ; actualiza 'varPosCursor'
+        posicionar_cursor 20,varPosCursor
+        ;print strNumero
+        printChar strNumero
+        cmp strNumero+1, '$'
+        je continuarL2 
+            cmp anchoRectangulo, 18
+            jbe incFila ; Sino incrementamos la columna
+                inc varPosCursor
+                posicionar_cursor 20,varPosCursor
+                printChar strNumero[1]
+                jmp continuarL2
+
+            incFila: ; Incrementamos la fila 20 +1 (21)  
+                posicionar_cursor 21,varPosCursor
+                printChar strNumero[1]
+        continuarL2: 
+                            ;push ax 
+                            ;mov ah, 10h
+                            ;int 16h  
+                            ;pop ax
+        ;%%%%%%%%%%% pintar el rectangulo
+        ;GET_color arrNumeros[si], colorcito
+
+        pintar_rectangulo bx,ax,dx,colorcito 
+
+        mov bx, ax 
+        add bx, 5 ; Agregamos el espaciado entre cada rectangulo
+
+        add si, 2
+        ;cmp modoOrdenamiento, 1
+        ;jne L15
+        ;    add si,2
+        ;    jmp L16 
+        ;L15:
+        ;    sub si,2
+        ;L16:
+        inc cx
+        ;pausar
+        jmp forL2
+    finL2:
+     
+    pop si
+    pop cx
+    pop dx
+    pop bx
+    pop ax
+ret 
+GRAFICAR_NUMEROS endp
+
+
+GET_PosCursor proc ; Calcular la posicion donde colocar el cursor para colocar el numero abajo del rectangulo
+; Antes de ejecutar este procedimiento se debe de llamar DS_DATOS
+; El inicio del rectangulo se encuentra en bx 
+    push bx
+    push ax 
+ 
+    mov ax, bx 
+    mov bl, 8 ; 8 bits que ocupa el escribir un digito 
+    div bl  ; AL = cociente, ah = residuo
+
+    mov varPosCursor, al 
+    cmp ah, 0 ; Si tiene residuo debemos incrementar la variable en +1
+    je finL3
+        inc varPosCursor
+    finL3: 
+    pop ax 
+    pop bx
+
+ret
+GET_PosCursor endp
+
+
+
+barras_ascendente proc 
+
+    CALL INI_VIDEO
+    trazar_ejeX 190,15,305
+    CALL GRAFICAR_NUMEROS
+    pausar
+    CALL FIN_VIDEO
+ ret
+barras_ascendente endp 
+
+
+
+INI_VIDEO proc
+    mov ax,0013h ; o funcion 12 h
+    int 10h 
+ret
+INI_VIDEO endp
+
+
+FIN_VIDEO proc 
+
+    mov ax, 0003h
+    int 10h 
+    mov ax, @data 
+    mov ds, ax 
+ret
+FIN_VIDEO endp
+
+DS_DATOS proc ; ds -> apunta al area de datos
+    push ax 
+    mov ax, @data 
+    mov ds, ax 
+    pop ax
+ret
+DS_DATOS endp
+
+
+DS_VIDEO proc ; ds -> apunta al area de memoria de video
+    push ax 
+    mov ax, 0A000h 
+    mov ds, ax 
+    pop ax
+ret
+DS_VIDEO endp
+
+ejecutar_reporte proc 
+
+    crearFichero strNombreReporte ; -> AX = handle
+    jc errorR
+        mov handleReporte, ax
+        mov ptrReporte, 0 ; para que cree denuevo el reporte
+        strCpy strDatosE, strReporte, ptrReporte
+        
+        ; Fecha del bios 
+        mov ah, 2ah 
+        int 21h ;retorna cx=year, dh=month, dl=dia
+
+        strCpy strFecha, strReporte, ptrReporte 
+        ;copiar dia
+        limpiarVariable fecha, sizeof fecha
+        push cx 
+        mov cx, 0
+        mov cl,dl 
+        itos cx, fecha
+        strCpy fecha, strReporte, ptrReporte
+        strCpy strbarra, strReporte, ptrReporte
+        ; Copiar mes
+        limpiarVariable fecha, sizeof fecha
+        mov cx, 0
+        mov cl, dh 
+        itos cx, fecha 
+        strCpy fecha, strReporte, ptrReporte
+        strCpy strbarra, strReporte, ptrReporte
+        ;; Copiar año
+        pop cx
+        limpiarVariable fecha, sizeof fecha
+        itos cx, fecha
+        strCpy fecha, strReporte, ptrReporte
+
+        ; Hora del bios
+        mov ah, 2ch 
+        int 21h ; retorna ch=hora, cl=minutos, dh=segundos
+        
+        strCpy strHora, strReporte, ptrReporte 
+        mov ax,0
+        mov al, ch 
+        limpiarVariable hora, sizeof hora
+        itos ax, hora 
+        strCpy hora, strReporte, ptrReporte
+        strCpy strdp, strReporte, ptrReporte 
+        ; set minutos
+        limpiarVariable hora, sizeof hora
+        mov al, cl 
+        itos ax, hora
+        strCpy hora, strReporte, ptrReporte
+        strCpy strdp, strReporte, ptrReporte 
+        ; set segundos
+        limpiarVariable hora, sizeof hora
+        mov al, dh 
+        itos ax, hora
+        strCpy hora, strReporte, ptrReporte
+
+        ; Mostrar calculos de modia, mediana, etc
+            strCpy strCalc, strReporte, ptrReporte
+        ;mediana
+            strCpy strMediana, strReporte, ptrReporte
+            limpiarVariable strNumero, sizeof strNumero
+            itos enteroCmediana, strNumero
+            strCpy strNumero, strReporte, ptrReporte
+            strCpy strpunto, strReporte, ptrReporte
+            limpiarVariable strNumero, sizeof strNumero
+            itos decimalCmediana, strNumero
+            strCpy strNumero, strReporte, ptrReporte
+        ;Promedio
+            strCpy strPromedio, strReporte, ptrReporte
+            limpiarVariable strNumero, sizeof strNumero
+            itos enteroCprom, strNumero
+            strCpy strNumero, strReporte, ptrReporte
+            strCpy strpunto, strReporte, ptrReporte
+            limpiarVariable strNumero, sizeof strNumero
+            itos decimalCprom, strNumero
+            strCpy strNumero, strReporte, ptrReporte
+        ;Moda
+            strCpy strModa, strReporte, ptrReporte
+            limpiarVariable strNumero, sizeof strNumero
+            itos valModa, strNumero
+            strCpy strNumero, strReporte, ptrReporte
+        ; Maximo 
+            strCpy strMax, strReporte, ptrReporte
+            limpiarVariable strNumero, sizeof strNumero
+            itos maxVal, strNumero
+            strCpy strNumero, strReporte, ptrReporte
+        ; minimo
+            strCpy strMin, strReporte, ptrReporte
+            limpiarVariable strNumero, sizeof strNumero
+            itos minVal, strNumero
+            strCpy strNumero, strReporte, ptrReporte
+        ; Tabla de frequencias
+            strCpy strfrec, strReporte, ptrReporte
+            lea si, hash ; nos colocamos nuevamente al inicio del hash
+            buscarModa2: ; solo iterar el hash para mostrar el reporte
+                ; if (nodo =! '-1') -> continuar ejecucion
+                mov ax, (nodo ptr[si]).val
+                cmp ax, -1
+                JE finModa2
+                    mov ax, (nodo ptr[si]).val
+                    mov aux, ax 
+                    limpiarVariable strNumero, sizeof strNumero
+                    itos aux, strNumero
+                    strCpy strB, strReporte, ptrReporte ;concatenar '|'
+                    strCpy strTab, strReporte, ptrReporte ;concatenar TAB
+                    strCpy strNumero, strReporte, ptrReporte ;concatenar .val 
+                    mov ax, (nodo ptr[si]).conta
+                    mov aux, ax 
+                    limpiarVariable strNumero, sizeof strNumero
+                    itos aux, strNumero
+                    strCpy strB, strReporte, ptrReporte ;concatenar '|'
+                    strCpy strTab, strReporte, ptrReporte ;concatenar TAB
+                    strCpy strNumero, strReporte, ptrReporte ;concatenar .conta 
+                    strCpy strB, strReporte, ptrReporte ;concatenar '|'
+                    strCpy salto, strReporte, ptrReporte ;concatenar salto
+                add si,4 ; 
+            jmp buscarModa2
+            finModa2:
+        ; Escribir en el fichero
+        writeFichero handleReporte, strReporte, ptrReporte
+        cerrarFichero handleReporte
+
+        jmp L11
+    errorR:
+        print strErrorF
+    L11:
+
+
+ ret
+ejecutar_reporte endp
 
 end main
 

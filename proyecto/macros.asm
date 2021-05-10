@@ -60,6 +60,21 @@ cerrarFichero macro handle
     int 21h
 endm
 
+crearFichero macro nombre 
+        
+    mov ah, 3CH
+    mov cx, 00H ; FICHERO NORMAL
+    mov dx, offset nombre ; nombre del fichero
+    int 21h    
+endm
+
+writeFichero macro handler, cadena, numBytes
+    mov ah, 40H
+    mov bx, handler       ; puntero al archivo
+    mov cx, numBytes      ; cantidad de bytes a escribir
+    mov dx, offset cadena ; bytes de donde se sacara la informacion
+    int 21h
+endm
 ;%%%%%%%%%%%%%%%%%%%%%%%%%%%% FIN %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -160,6 +175,7 @@ itos macro val,valString ;integer to string
       ; limpiar dx, ya que DIV uitliza dx en sus calculos
       xor dx,dx
       jmp L6
+
     imprimir: 
       ;Extraer de la pila
       cmp cx,0
@@ -182,7 +198,7 @@ itos macro val,valString ;integer to string
       ; print 0
       mov dx, ax
       add dx,48 
-      mov [si],dx
+      mov [si],dl
       ;mov ah, 02h
       ;int 21h ; El valor lo extrae de dl
     salir:
@@ -194,6 +210,58 @@ itos macro val,valString ;integer to string
     pop ax 
 
 endm
+
+strCpy macro Origen, Destino, ptrDestino 
+    LOCAL for 
+    push si 
+    push di 
+    push cx 
+    push bx 
+    push ax 
+
+    mov di, offset destino 
+    mov si, offset origen
+
+    ;mov cx, SIZEOF Origen ; Tamaño del string que se desea copiar
+    get_length origen ;-> resultado en cx
+    mov bx, ptrDestino       ; Desde donde debe empezar a colocar los caracteres
+    for:  
+        mov al, [si]
+        mov [di + bx], al
+        inc bx
+        inc si 
+    loop for 
+    ; actualizar el id del puntero
+    ;dec bx ; Colocar el puntero al final de '$'
+    mov ptrDestino,bx 
+
+    pop ax 
+    pop bx 
+    pop cx
+    pop di
+    pop si
+
+endm
+
+
+get_length macro string ; Obtener el tamaño de un string -> resultado estara en cx
+    local for, break  
+    push si 
+
+    mov cx,0 ; contador -> 64k palabras es lo maximo que podria contar un contador de 16 bits
+    mov si,0 
+    for:
+        ;if char != '$'
+        cmp string[si], '$'
+        je break
+            inc si 
+            inc cx 
+        jmp for 
+    break:
+
+    pop si
+
+endm 
 ;%%%%%%%%%%%%%%%%%%%%%%%%%%%% FIN %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -346,3 +414,95 @@ cls macro
     loop ciclo    
 endm 
 ;%%%%%%%%%%%%%%%%%%%%%%%%%%%% FIN %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+;%%%%%%%%%%%%%%%%%%%% FUNCIONES RELACIONADAS CON MODO VIDEO %%%%%%%%%%%%%%%%%%%%%%%%%%%
+pausar macro 
+    push ax 
+    mov ah, 10h
+    int 16h 
+    pop ax
+endm 
+
+
+pintar_pixel macro i,j,color ; i(fila) -> (0,199), j(col)-> (0-319)
+    push ax
+    push bx
+    push di
+    push dx ; Al utilizar MUL
+    ;limpiar variables
+    mov ax,0
+    mov bx,0
+    ;mapeo lexicografico
+    mov ax, 320
+    mov bx, i 
+    mul bx ; ax = ax * bx
+    add ax, j 
+    ; asignar el color en la direccion de memoria indicada
+    mov di, ax 
+        mov ax, color
+    CALL DS_VIDEO
+    mov [di],ax ; [] -> Asigna en el segmento de VIDEO actual el valor 
+    CALL DS_DATOS  
+    pop dx
+    pop di
+    pop bx
+    pop ax 
+
+endm
+
+
+pintar_rectangulo macro ancho1, ancho2, altura, color
+    LOCAL forcol, forfila
+    push si 
+    push cx
+
+    mov si,ancho1
+    forcol:
+        mov cx, 155 ; fila donde iniciara
+        forfila:
+            pintar_pixel cx, si, color
+            dec cx 
+            cmp cx, altura ;fila donde terminara
+        jne forfila
+        inc si 
+        cmp si, ancho2
+    jne forcol 
+
+    pop cx
+    pop si
+endm 
+
+posicionar_cursor macro fila, columna ; (maximos fila 25, columna 118)
+    push ax
+    push bx
+    push dx 
+    mov ax, 0
+    ; codigo para posicionar el cursor 
+    mov ah, 02h 
+    mov bh, 00h
+    mov dh, fila; Linea del cursor (solo 23 filas)
+    mov dl, columna ; Columna del cursor ; 118 columnas
+    int 10h
+    ;Recuperar para no afectar registros
+    pop dx
+    pop bx
+    pop ax
+endm
+
+trazar_ejeX macro fila1, col1, col2   ; mover desde fila,col hasta -> col 2
+    local for1 
+    push si
+
+    mov si,0
+    mov si, col1
+    for1: 
+        pintar_pixel fila1,si,15
+        ;pintar_pixel fila2,si,color 
+        inc si 
+        cmp si, col2
+    jne for1
+
+    pop si
+endm
+;%%%%%%%%%%%%%%%%%%%%%%%%%%%% FIN %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
